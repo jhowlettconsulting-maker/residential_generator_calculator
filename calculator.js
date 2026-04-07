@@ -58,8 +58,18 @@ const APPLIANCES = [
 ];
 
 const DEFAULTS = {
-  essential: ['lights', 'fridge', 'sump', 'phone_charging'],
-  whole:     ['lights', 'fridge', 'sump', 'phone_charging', 'washer', 'ac_2ton', 'tv'],
+  residential: {
+    essential: ['lights', 'fridge', 'sump', 'phone_charging'],
+    whole:     ['lights', 'fridge', 'sump', 'phone_charging', 'washer', 'ac_2ton', 'tv'],
+  },
+  commercial: {
+    essential: ['lights', 'fridge', 'desktop', 'phone_charging'],
+    whole:     ['lights', 'fridge', 'desktop', 'tv', 'ac_2ton', 'coffee'],
+  },
+  industrial: {
+    essential: ['lights', 'air_comp', 'phone_charging'],
+    whole:     ['lights', 'air_comp', 'table_saw', 'pressure_wash', 'ac_3ton'],
+  },
 };
 
 const FUEL_APPLIANCE = {
@@ -72,6 +82,7 @@ const FUEL_APPLIANCE = {
 };
 
 const state = {
+  segment:   null,
   step:      0,
   coverage:  null,
   fuel:      null,
@@ -119,7 +130,7 @@ function showToast(msg) {
   }, 2800);
 }
 
-/* ── Safe scroll ──────────────────────────────────────────── */
+/* ── Safe scroll ─────────────────────────────────────────── */
 function safeScrollTop() {
   try {
     const wrapper = document.getElementById('generator-calculator');
@@ -128,6 +139,62 @@ function safeScrollTop() {
   } catch(e) {
     try { document.documentElement.scrollTop = 0; } catch(e2) {}
   }
+}
+
+function showResidentialFlow(show) {
+  const flow = document.getElementById('residential-flow');
+  if (flow) flow.style.display = show ? '' : 'none';
+  const nav = document.getElementById('calc-nav');
+  if (nav) nav.style.display = show ? '' : 'none';
+}
+
+function showBranchStep(show) {
+  const branch = document.getElementById('branch-step');
+  if (branch) branch.style.display = show ? '' : 'none';
+}
+
+function updateCalculatorHeading(segment) {
+  const title = document.getElementById('calc-title');
+  const subtitle = document.getElementById('calc-subtitle');
+  const headings = {
+    residential: {
+      title: 'Residential Generator Calculator',
+      subtitle: 'Estimate backup power needs for your home.',
+    },
+    commercial: {
+      title: 'Commercial Generator Calculator',
+      subtitle: 'Estimate backup power needs for offices, retail, and business operations.',
+    },
+    industrial: {
+      title: 'Industrial Generator Calculator',
+      subtitle: 'Estimate backup power needs for high-demand and heavy-duty operations.',
+    },
+  };
+  const chosen = headings[segment] || {
+    title: 'Generator Power Calculator',
+    subtitle: 'Answer a few quick questions and we’ll recommend the right generator size for your property.',
+  };
+
+  if (title) title.textContent = chosen.title;
+  if (subtitle) subtitle.textContent = chosen.subtitle;
+}
+
+function initBranching() {
+  document.querySelectorAll('.segment-card').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const segment = btn.dataset.segment;
+      state.segment = segment;
+      document.querySelectorAll('.segment-card').forEach(b => b.setAttribute('aria-pressed', String(b === btn)));
+
+      showBranchStep(false);
+      showResidentialFlow(true);
+      updateCalculatorHeading(segment);
+      restart();
+      showStep(0);
+      updateProgressBar();
+      safeScrollTop();
+    });
+  });
 }
 
 /* ── Helpers ──────────────────────────────────────────────── */
@@ -200,9 +267,12 @@ function showStep(n) {
 /* ── Step 0 ───────────────────────────────────────────────── */
 function initStep0() {
   document.querySelectorAll('.coverage-card').forEach(btn => {
+    if (btn.classList.contains('segment-card')) return;
     btn.addEventListener('click', () => {
       state.coverage = btn.dataset.coverage;
-      document.querySelectorAll('.coverage-card').forEach(b => b.setAttribute('aria-pressed', 'false'));
+      document.querySelectorAll('.coverage-card').forEach(b => {
+        if (!b.classList.contains('segment-card')) b.setAttribute('aria-pressed', 'false');
+      });
       btn.setAttribute('aria-pressed', 'true');
     });
   });
@@ -221,7 +291,9 @@ function initStep1() {
 
 /* ── Step 2 ───────────────────────────────────────────────── */
 function applyDefaults() {
-  const defaults = DEFAULTS[state.coverage] || DEFAULTS.essential;
+  const segment = state.segment || 'residential';
+  const segmentDefaults = DEFAULTS[segment] || DEFAULTS.residential;
+  const defaults = segmentDefaults[state.coverage] || segmentDefaults.essential;
   defaults.forEach(id => {
     if (!state.selected[id]) state.selected[id] = { qty: 1 };
   });
@@ -252,67 +324,44 @@ function renderAppliancePanel() {
 
   customForm.style.display = 'none';
   panel.style.display = 'grid';
-
-  const apps = getAllAppliances().filter(a => a.tab === tab);
   panel.innerHTML = '';
-  apps.forEach(a => panel.appendChild(buildAppCard(a)));
+
+  APPLIANCES.filter(a => a.tab === tab).forEach(a => {
+    panel.appendChild(buildAppCard(a));
+  });
 }
 
 function buildAppCard(a) {
-  const isSelected = !!state.selected[a.id];
-  const div = document.createElement('div');
-  div.className = 'app-card' + (isSelected ? ' selected' : '');
-  div.dataset.id = a.id;
-  div.setAttribute('role', 'checkbox');
-  div.setAttribute('aria-checked', String(isSelected));
-  div.setAttribute('tabindex', '0');
-
-  const surgeText = a.surge && a.surge !== a.running
-    ? `<span>${a.surge.toLocaleString()} W surge</span>`
-    : '';
-
-  div.innerHTML = `
-    <span class="app-check" aria-hidden="true"></span>
-    <span class="app-icon" aria-hidden="true">${a.icon}</span>
+  const selected = !!state.selected[a.id];
+  const card = document.createElement('button');
+  card.type = 'button';
+  card.className = 'app-card' + (selected ? ' selected' : '');
+  card.setAttribute('aria-pressed', String(selected));
+  card.innerHTML = `
+    <span class="app-check"></span>
+    <span class="app-icon">${a.icon || '🔌'}</span>
     <span class="app-info">
       <span class="app-name">${a.name}</span>
-      <span class="app-watts">
-        <span>${a.running.toLocaleString()} W running</span>
-        ${surgeText}
-      </span>
+      <span class="app-watts">${fmt(a.running)} running${a.surge && a.surge !== a.running ? ` • ${fmt(a.surge)} surge` : ''}</span>
     </span>
   `;
-
-  function toggle() {
+  card.addEventListener('click', () => {
     if (state.selected[a.id]) {
       delete state.selected[a.id];
     } else {
       state.selected[a.id] = { qty: 1 };
     }
     renderAppliancePanel();
-    updateRunningTotal();
-  }
-
-  div.addEventListener('click', toggle);
-  div.addEventListener('keydown', e => {
-    if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); toggle(); }
+    updateRunningTotalBar();
   });
-
-  return div;
-}
-
-function updateRunningTotal() {
-  const { running, peak } = calcTotals();
-  const rtRunning = document.getElementById('rt-running');
-  const rtSurge   = document.getElementById('rt-surge');
-  if (rtRunning) rtRunning.textContent = fmt(running);
-  if (rtSurge)   rtSurge.textContent   = fmt(peak);
+  return card;
 }
 
 function initStep2() {
   document.querySelectorAll('.tab-btn').forEach(btn => {
     btn.addEventListener('click', () => {
-      state.activeTab = btn.dataset.tab;
+      const tab = btn.dataset.tab;
+      state.activeTab = tab;
       document.querySelectorAll('.tab-btn').forEach(b => {
         b.classList.toggle('active', b === btn);
         b.setAttribute('aria-selected', String(b === btn));
@@ -321,265 +370,358 @@ function initStep2() {
     });
   });
 
-  document.getElementById('add-custom-btn').addEventListener('click', () => {
-    const name    = document.getElementById('custom-name').value.trim();
-    const running = parseInt(document.getElementById('custom-running').value);
-    const surge   = parseInt(document.getElementById('custom-surge').value) || running;
+  const addBtn = document.getElementById('add-custom-btn');
+  if (addBtn) {
+    addBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      const nameEl = document.getElementById('custom-name');
+      const runEl = document.getElementById('custom-running');
+      const surgeEl = document.getElementById('custom-surge');
 
-    if (!name || !running || running < 1) {
-      showToast('Please enter an appliance name and running watts.');
-      return;
-    }
+      const name = (nameEl.value || '').trim();
+      const running = parseInt(runEl.value, 10);
+      const surge = surgeEl.value ? parseInt(surgeEl.value, 10) : running;
 
-    const id = 'custom_' + (++customCounter);
-    state.custom.push({ id, name, icon: '🔌', running, surge, tab: 'custom' });
-    state.selected[id] = { qty: 1 };
+      if (!name) return showToast('Please enter an appliance name.');
+      if (!running || running < 1) return showToast('Please enter valid running watts.');
 
-    document.getElementById('custom-name').value    = '';
-    document.getElementById('custom-running').value = '';
-    document.getElementById('custom-surge').value   = '';
+      const id = `custom_${++customCounter}`;
+      const custom = {
+        id,
+        name,
+        icon: '🛠️',
+        running,
+        surge: surge >= running ? surge : running,
+        tab: 'custom',
+        custom: true,
+      };
+      state.custom.push(custom);
+      state.selected[id] = { qty: 1 };
 
-    renderAppliancePanel();
-    updateRunningTotal();
-  });
+      nameEl.value = '';
+      runEl.value = '';
+      surgeEl.value = '';
+
+      renderAppliancePanel();
+      updateRunningTotalBar();
+      showToast('Custom appliance added.');
+    });
+  }
+}
+
+function updateRunningTotalBar() {
+  const { running, peak } = calcTotals();
+  const rtRunning = document.getElementById('rt-running');
+  const rtSurge = document.getElementById('rt-surge');
+  if (rtRunning) rtRunning.textContent = fmt(running);
+  if (rtSurge) rtSurge.textContent = fmt(peak);
 }
 
 /* ── Step 3 ───────────────────────────────────────────────── */
 function renderReview() {
   const tbody = document.getElementById('review-tbody');
   const empty = document.getElementById('review-empty');
-  const wrap  = document.getElementById('review-table-wrap');
-  const all   = getAllAppliances();
-  const ids   = Object.keys(state.selected);
+  const wrap = document.getElementById('review-table-wrap');
+
+  const all = getAllAppliances();
+  const ids = Object.keys(state.selected);
+
+  if (!tbody || !empty || !wrap) return;
 
   if (ids.length === 0) {
+    tbody.innerHTML = '';
     empty.style.display = '';
-    wrap.style.display  = 'none';
+    wrap.style.display = 'none';
+    document.getElementById('review-total-running').textContent = '0 W';
+    document.getElementById('review-total-surge').textContent = '0 W';
     return;
   }
 
   empty.style.display = 'none';
-  wrap.style.display  = '';
-  tbody.innerHTML = '';
+  wrap.style.display = '';
 
+  tbody.innerHTML = '';
   ids.forEach(id => {
     const a = all.find(x => x.id === id);
-    if (!a) return;
     const qty = state.selected[id].qty;
+    if (!a) return;
 
     const tr = document.createElement('tr');
+    tr.dataset.id = id;
     tr.innerHTML = `
-      <td><span aria-hidden="true">${a.icon}</span> ${a.name}</td>
+      <td>${a.name}</td>
       <td>
         <div class="qty-ctrl">
-          <button class="qty-btn" data-action="dec" data-id="${id}" aria-label="Decrease quantity">−</button>
-          <span class="qty-num" id="qty-${id}">${qty}</span>
-          <button class="qty-btn" data-action="inc" data-id="${id}" aria-label="Increase quantity">+</button>
+          <button class="qty-btn" data-action="dec" aria-label="Decrease quantity">−</button>
+          <span class="qty-num">${qty}</span>
+          <button class="qty-btn" data-action="inc" aria-label="Increase quantity">+</button>
         </div>
       </td>
-      <td>${(a.running * qty).toLocaleString()} W</td>
-      <td>${((a.surge || a.running) * qty).toLocaleString()} W</td>
-      <td><button class="remove-btn" data-id="${id}" aria-label="Remove ${a.name}">✕</button></td>
+      <td>${fmt(a.running * qty)}</td>
+      <td>${fmt((a.surge || a.running) * qty)}</td>
+      <td class="col-remove"><button class="remove-btn" data-action="remove" aria-label="Remove">✕</button></td>
     `;
     tbody.appendChild(tr);
   });
 
-  updateReviewTotals();
-  tbody.addEventListener('click', handleReviewClick);
+  const totals = calcTotals();
+  document.getElementById('review-total-running').textContent = fmt(totals.running);
+  document.getElementById('review-total-surge').textContent = fmt(totals.peak);
 }
 
-function handleReviewClick(e) {
-  const btn = e.target.closest('button');
+function handleReviewTableClick(e) {
+  const btn = e.target.closest('button[data-action]');
   if (!btn) return;
-  const id = btn.dataset.id;
-  if (!id) return;
 
-  if (btn.classList.contains('remove-btn')) {
+  const tr = btn.closest('tr[data-id]');
+  if (!tr) return;
+
+  const id = tr.dataset.id;
+  const action = btn.dataset.action;
+  if (!state.selected[id]) return;
+
+  if (action === 'inc') {
+    state.selected[id].qty += 1;
+  } else if (action === 'dec') {
+    state.selected[id].qty = Math.max(1, state.selected[id].qty - 1);
+  } else if (action === 'remove') {
     delete state.selected[id];
-    state.custom = state.custom.filter(c => c.id !== id);
-    renderReview();
-    return;
   }
 
-  if (btn.dataset.action === 'inc') {
-    state.selected[id].qty = Math.min(9, state.selected[id].qty + 1);
-  } else if (btn.dataset.action === 'dec') {
-    if (state.selected[id].qty > 1) {
-      state.selected[id].qty -= 1;
-    } else {
-      delete state.selected[id];
-      renderReview();
-      return;
-    }
-  }
-
-  const a = getAllAppliances().find(x => x.id === id);
-  if (!a) return;
-  const qty = state.selected[id].qty;
-  const row = btn.closest('tr');
-  row.querySelector('.qty-num').textContent = qty;
-  const cells = row.querySelectorAll('td');
-  cells[2].textContent = (a.running * qty).toLocaleString() + ' W';
-  cells[3].textContent = ((a.surge || a.running) * qty).toLocaleString() + ' W';
-  updateReviewTotals();
-}
-
-function updateReviewTotals() {
-  const { running, peak } = calcTotals();
-  const rtr = document.getElementById('review-total-running');
-  const rts = document.getElementById('review-total-surge');
-  if (rtr) rtr.textContent = fmt(running);
-  if (rts) rts.textContent = fmt(peak);
+  renderReview();
+  updateRunningTotalBar();
 }
 
 /* ── Step 4 ───────────────────────────────────────────────── */
-function renderResults() {
-  const { running, peak, rangeMin, rangeMax } = calcTotals();
+function buildRecommendation({ recommended }) {
+  if (recommended < 10000) {
+    return {
+      tone: 'green',
+      emoji: '✅',
+      heading: 'Compact standby recommendation',
+      blurb: 'Ideal for essential backup loads and selective circuits.',
+    };
+  }
+  if (recommended < 24000) {
+    return {
+      tone: 'amber',
+      emoji: '⚙️',
+      heading: 'Mid-range standby recommendation',
+      blurb: 'Great for larger homes or mixed-use backup requirements.',
+    };
+  }
+  return {
+    tone: 'red',
+    emoji: '🏭',
+    heading: 'High-capacity recommendation',
+    blurb: 'Best for extensive whole-property or high-demand applications.',
+  };
+}
 
-  document.getElementById('res-running').textContent = fmt(running);
-  document.getElementById('res-peak').textContent    = fmt(peak);
+function getGeneratorTypeText(recommended) {
+  if (recommended < 12000) {
+    return 'Portable or entry standby generator may be appropriate depending on transfer setup.';
+  }
+  if (recommended < 24000) {
+    return 'A whole-home standby generator with automatic transfer switch is typically recommended.';
+  }
+  return 'A commercial/industrial-grade standby solution and professional load analysis is strongly recommended.';
+}
 
-  const recCard = document.getElementById('rec-card');
-  let color, emoji, headline, desc;
+function getTips(segment) {
+  const common = [
+    'Confirm starting loads with manufacturer nameplate ratings.',
+    'Plan for future expansion and seasonal load changes.',
+    'Consult a licensed electrician for transfer switch and code compliance.',
+  ];
 
-  if (rangeMax <= 7500) {
-    color = 'green'; emoji = '✅';
-    headline = 'Portable Generator';
-    desc = `A quality portable generator in the <strong>${fmt(rangeMin)} – ${fmt(rangeMax)}</strong> range will handle your load. Look for one rated at <strong>${fmt(rangeMax)}</strong> or higher.`;
-  } else if (rangeMax <= 12000) {
-    color = 'amber'; emoji = '⚡';
-    headline = 'Heavy-Duty Portable or Entry-Level Standby';
-    desc = `Your load calls for a generator in the <strong>${fmt(rangeMin)} – ${fmt(rangeMax)}</strong> range. A heavy-duty portable works; a standby unit offers convenience and automatic transfer.`;
-  } else {
-    color = 'red'; emoji = '🏠';
-    headline = 'Standby Generator Recommended';
-    desc = `At <strong>${fmt(rangeMin)} – ${fmt(rangeMax)}</strong>, a whole-home standby generator is the right choice. A licensed electrician will install it with an automatic transfer switch.`;
+  if (segment === 'commercial') {
+    return [
+      'Identify business-critical circuits first (POS, refrigeration, lighting, internet).',
+      'Coordinate outage priorities by department.',
+      ...common,
+    ];
   }
 
-  recCard.className = `rec-card ${color}`;
+  if (segment === 'industrial') {
+    return [
+      'Prioritize process-critical motors and controls.',
+      'Verify inrush/starting current assumptions with actual equipment data.',
+      ...common,
+    ];
+  }
+
+  return [
+    'Separate essential vs convenience loads to optimize generator size.',
+    'Account for HVAC startup surges in summer/winter peak conditions.',
+    ...common,
+  ];
+}
+
+function renderResults() {
+  const totals = calcTotals();
+
+  document.getElementById('res-running').textContent = fmt(totals.running);
+  document.getElementById('res-peak').textContent = fmt(totals.peak);
+
+  const rec = buildRecommendation(totals);
+  const recCard = document.getElementById('rec-card');
+  recCard.className = `rec-card ${rec.tone}`;
   recCard.innerHTML = `
-    <span class="rec-emoji">${emoji}</span>
+    <div class="rec-emoji">${rec.emoji}</div>
     <div class="rec-body">
-      <h3>${headline}</h3>
-      <span class="rec-size">${fmt(rangeMin)} – ${fmt(rangeMax)}</span>
-      <p>${desc}</p>
+      <h3>${rec.heading}</h3>
+      <span class="rec-size">${fmt(totals.recommended)}</span>
+      <p>Recommended generator size range: <strong>${fmt(totals.rangeMin)} – ${fmt(totals.rangeMax)}</strong>. ${rec.blurb}</p>
     </div>
   `;
 
-  document.getElementById('generator-type-block').innerHTML = `
-    <strong>Portable vs. Standby — at a glance</strong>
-    <table style="width:100%;border-collapse:collapse;font-size:.83rem;margin-top:6px">
-      <thead><tr>
-        <th style="text-align:left;padding:6px 8px;border-bottom:1px solid var(--border);color:var(--text-3)">Type</th>
-        <th style="text-align:left;padding:6px 8px;border-bottom:1px solid var(--border);color:var(--text-3)">Best for</th>
-        <th style="text-align:left;padding:6px 8px;border-bottom:1px solid var(--border);color:var(--text-3)">Typical size</th>
-      </tr></thead>
-      <tbody>
-        <tr><td style="padding:7px 8px;border-bottom:1px solid var(--border)">Portable</td>
-            <td style="padding:7px 8px;border-bottom:1px solid var(--border)">Occasional outages, camping, job sites</td>
-            <td style="padding:7px 8px;border-bottom:1px solid var(--border)">2,000 – 12,000W</td></tr>
-        <tr><td style="padding:7px 8px;border-bottom:1px solid var(--border)">Standby</td>
-            <td style="padding:7px 8px;border-bottom:1px solid var(--border)">Whole-house, automatic power, frequent outages</td>
-            <td style="padding:7px 8px;border-bottom:1px solid var(--border)">10,000 – 36,000W+</td></tr>
-      </tbody>
-    </table>
+  const typeBlock = document.getElementById('generator-type-block');
+  typeBlock.innerHTML = `
+    <strong>Generator type guidance</strong>
+    ${getGeneratorTypeText(totals.recommended)}
   `;
 
-  const tips = [
-    `Your calculation includes a <strong>25% safety buffer</strong> — the industry-standard margin recommended by Generac, Kohler, and the NEC.`,
-    `Always start motor-driven appliances (AC, pumps) one at a time to avoid overloading the generator during surge.`,
-  ];
-
-  const all = getAllAppliances();
-  const ids = Object.keys(state.selected);
-  if (ids.includes('elec_dryer'))   tips.push('Switching to a <strong>gas clothes dryer</strong> (~700W) instead of electric (~5,400W) can reduce your required generator size significantly.');
-  if (ids.includes('elec_range'))   tips.push('An <strong>electric range uses 4,000W</strong>. A gas range or camping stove during outages can reduce your generator size by one full tier.');
-  if (ids.includes('ev_charger'))   tips.push('Your EV Level 2 charger draws <strong>7,200W</strong> — consider skipping EV charging during an outage or switching to a slower Level 1 charge.');
-  if (ids.includes('elec_furnace')) tips.push('Electric resistance heating is the highest-draw home system (~5,000W). A gas or propane furnace with a blower (~800W) would drastically reduce requirements.');
-  if (ids.some(id => id.startsWith('heatpump'))) tips.push('Heat pumps have high startup surge watts. Make sure your generator\'s <em>peak/surge</em> rating — not just running watts — meets your peak load.');
-  if (rangeMax > 20000)             tips.push('For loads above 20kW, consult a licensed electrician. Generator installation requires a proper transfer switch to meet NEC Article 702 and local codes.');
-
-  document.getElementById('tips-block').innerHTML = `
-    <h3>Sizing tips</h3>
-    <ul class="tips-list">
-      ${tips.slice(0, 5).map(t => `<li>${t}</li>`).join('')}
-    </ul>
-  `;
+  const tipsList = document.getElementById('tips-list');
+  tipsList.innerHTML = '';
+  getTips(state.segment || 'residential').forEach(t => {
+    const li = document.createElement('li');
+    li.textContent = t;
+    tipsList.appendChild(li);
+  });
 
   const wrapper = document.getElementById('generator-calculator');
-  const ctaUrl  = wrapper ? (wrapper.dataset.ctaUrl || '#') : '#';
-  const ctaBtn  = document.getElementById('cta-btn');
-  if (ctaBtn) ctaBtn.href = ctaUrl;
+  const cta = document.getElementById('cta-btn');
+  const url = wrapper?.dataset?.ctaUrl || '#';
+  cta.href = url;
 }
 
-/* ── Navigation ───────────────────────────────────────────── */
-function canAdvance() {
-  if (state.step === 0 && !state.coverage) {
-    showToast('Please select a coverage level to continue.');
+function returnToSegmentChooser() {
+  state.segment = null;
+  updateCalculatorHeading(null);
+  showResidentialFlow(false);
+  showBranchStep(true);
+  document.querySelectorAll('.segment-card').forEach(b => b.setAttribute('aria-pressed', 'false'));
+  safeScrollTop();
+}
+
+/* ── Nav / flow ───────────────────────────────────────────── */
+function validateStep(step) {
+  if (step === 0 && !state.coverage) {
+    showToast('Please choose your coverage level.');
     return false;
   }
-  if (state.step === 1 && !state.fuel) {
-    showToast('Please select your primary heating fuel type to continue.');
+  if (step === 1 && !state.fuel) {
+    showToast('Please choose your primary heating system.');
+    return false;
+  }
+  if (step === 2) {
+    applyDefaults();
+    if (Object.keys(state.selected).length === 0) {
+      showToast('Please select at least one appliance.');
+      return false;
+    }
+  }
+  if (step === 3 && Object.keys(state.selected).length === 0) {
+    showToast('Please add at least one appliance before calculating.');
     return false;
   }
   return true;
 }
 
-function goNext() {
-  if (!canAdvance()) return;
-
-  if (state.step === 1) {
-    applyDefaults();
-    renderAppliancePanel();
-    updateRunningTotal();
-  }
-  if (state.step === 2) renderReview();
-  if (state.step === 3) renderResults();
-
-  state.step++;
-  showStep(state.step);
-  updateProgressBar();
-  safeScrollTop();
-}
-
-function goBack() {
-  if (state.step === 0) return;
-  state.step--;
-  showStep(state.step);
-  updateProgressBar();
-  safeScrollTop();
-}
-
 function restart() {
-  state.step      = 0;
-  state.coverage  = null;
-  state.fuel      = null;
-  state.selected  = {};
-  state.custom    = [];
+  state.step = 0;
+  state.coverage = null;
+  state.fuel = null;
+  state.selected = {};
+  state.custom = [];
   state.activeTab = 'essential';
+  customCounter = 0;
 
-  document.querySelectorAll('.coverage-card').forEach(b => b.setAttribute('aria-pressed', 'false'));
-  document.querySelectorAll('.fuel-card').forEach(b => b.setAttribute('aria-pressed', 'false'));
-  document.querySelectorAll('.tab-btn').forEach((b, i) => {
-    b.classList.toggle('active', i === 0);
-    b.setAttribute('aria-selected', String(i === 0));
+  document.querySelectorAll('.coverage-card').forEach(btn => {
+    if (!btn.classList.contains('segment-card')) btn.setAttribute('aria-pressed', 'false');
+  });
+  document.querySelectorAll('.fuel-card').forEach(btn => btn.setAttribute('aria-pressed', 'false'));
+  document.querySelectorAll('.tab-btn').forEach((btn, i) => {
+    const active = i === 0;
+    btn.classList.toggle('active', active);
+    btn.setAttribute('aria-selected', String(active));
   });
 
+  renderAppliancePanel();
+  renderReview();
+  updateRunningTotalBar();
   showStep(0);
   updateProgressBar();
-  safeScrollTop();
+}
+
+function initNav() {
+  const back = document.getElementById('btn-back');
+  const next = document.getElementById('btn-next');
+  const restartBtn = document.getElementById('btn-restart');
+
+  if (back) {
+    back.addEventListener('click', () => {
+      if (state.step === 0) {
+        returnToSegmentChooser();
+        return;
+      }
+      state.step -= 1;
+      showStep(state.step);
+      updateProgressBar();
+
+      if (state.step === 2) renderAppliancePanel();
+      if (state.step === 3) renderReview();
+      if (state.step === 4) renderResults();
+
+      safeScrollTop();
+    });
+  }
+
+  if (next) {
+    next.addEventListener('click', () => {
+      if (!validateStep(state.step)) return;
+
+      if (state.step < 4) state.step += 1;
+
+      if (state.step === 2) {
+        applyDefaults();
+        renderAppliancePanel();
+      } else if (state.step === 3) {
+        renderReview();
+      } else if (state.step === 4) {
+        renderResults();
+      }
+
+      showStep(state.step);
+      updateProgressBar();
+      safeScrollTop();
+    });
+  }
+
+  if (restartBtn) {
+    restartBtn.addEventListener('click', () => {
+      restart();
+      returnToSegmentChooser();
+    });
+  }
 }
 
 /* ── Init ─────────────────────────────────────────────────── */
 document.addEventListener('DOMContentLoaded', () => {
+  initBranching();
   initStep0();
   initStep1();
   initStep2();
+  initNav();
 
-  document.getElementById('btn-next').addEventListener('click', goNext);
-  document.getElementById('btn-back').addEventListener('click', goBack);
-  document.getElementById('btn-restart').addEventListener('click', restart);
+  const reviewTable = document.getElementById('review-tbody');
+  if (reviewTable) {
+    reviewTable.addEventListener('click', handleReviewTableClick);
+  }
 
-  showStep(0);
-  updateProgressBar();
+  showBranchStep(true);
+  showResidentialFlow(false);
+  updateCalculatorHeading(null);
+  restart();
 });
