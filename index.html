@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Residential Generator Power Calculator | Ontivity Power</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="calc-wrapper" id="generator-calculator" data-cta-url="#">
+
+    <!-- Header -->
+    <div class="calc-header">
+      <div class="calc-header-icon">⚡</div>
+      <h1>Generator Power Calculator</h1>
+      <p>Answer a few quick questions and we'll recommend the right generator size for your home.</p>
+    </div>
+
+    <!-- Progress bar -->
+    <div class="progress-bar" aria-hidden="true">
+      <div class="progress-fill" id="progress-fill"></div>
+    </div>
+
+    <!-- Step labels -->
+    <div class="step-labels" aria-hidden="true">
+      <span class="step-label" data-step="0">Coverage</span>
+      <span class="step-label" data-step="1">Heating</span>
+      <span class="step-label" data-step="2">Appliances</span>
+      <span class="step-label" data-step="3">Review</span>
+      <span class="step-label" data-step="4">Results</span>
+    </div>
+
+    <!-- ── STEP 0: Coverage Level ── -->
+    <section class="step" id="step-0" data-step="0">
+      <div class="step-intro">
+        <h2>What level of backup power do you need?</h2>
+        <p>This helps us pre-select sensible defaults. You can adjust everything in the next steps.</p>
+      </div>
+
+      <div class="coverage-cards" id="coverage-cards">
+        <button class="coverage-card" data-coverage="essential" aria-pressed="false">
+          <span class="coverage-icon">🔌</span>
+          <div class="coverage-info">
+            <strong>Essential Only</strong>
+            <span class="coverage-sub">Keep critical systems running during an outage — lights, refrigerator, heating, sump pump, and any medical equipment.</span>
+            <span class="coverage-range">Typically 7,500 – 18,000W</span>
+          </div>
+        </button>
+        <button class="coverage-card" data-coverage="whole" aria-pressed="false">
+          <span class="coverage-icon">🏠</span>
+          <div class="coverage-info">
+            <strong>Whole House</strong>
+            <span class="coverage-sub">Power virtually everything — including air conditioning, laundry, electric range, and all of the above.</span>
+            <span class="coverage-range">Typically 20,000 – 36,000W+</span>
+          </div>
+        </button>
+      </div>
+    </section>
+
+    <!-- ── STEP 1: Heating Fuel Type ── -->
+    <section class="step" id="step-1" data-step="1">
+      <div class="step-intro">
+        <h2>How do you heat your home?</h2>
+        <p>Heating is often the biggest factor in generator sizing. This auto-selects the right appliance for you.</p>
+      </div>
+
+      <div class="fuel-cards" id="fuel-cards">
+        <button class="fuel-card" data-fuel="gas" aria-pressed="false">
+          <span class="fuel-icon">🔥</span>
+          <span class="fuel-label">Natural Gas</span>
+          <span class="fuel-note">~800W blower</span>
+        </button>
+        <button class="fuel-card" data-fuel="propane" aria-pressed="false">
+          <span class="fuel-icon">🛢️</span>
+          <span class="fuel-label">Propane</span>
+          <span class="fuel-note">~800W blower</span>
+        </button>
+        <button class="fuel-card" data-fuel="oil" aria-pressed="false">
+          <span class="fuel-icon">🪣</span>
+          <span class="fuel-label">Heating Oil / Boiler</span>
+          <span class="fuel-note">~800W blower</span>
+        </button>
+        <button class="fuel-card" data-fuel="electric" aria-pressed="false">
+          <span class="fuel-icon">⚡</span>
+          <span class="fuel-label">Electric Baseboard</span>
+          <span class="fuel-note">~5,000W</span>
+        </button>
+        <button class="fuel-card" data-fuel="heatpump" aria-pressed="false">
+          <span class="fuel-icon">🌡️</span>
+          <span class="fuel-label">Heat Pump</span>
+          <span class="fuel-note">2,000 – 5,000W</span>
+        </button>
+        <button class="fuel-card" data-fuel="none" aria-pressed="false">
+          <span class="fuel-icon">🏢</span>
+          <span class="fuel-label">Space Heaters / Other</span>
+          <span class="fuel-note">~1,500W each</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- ── STEP 2: Appliance Selection ── -->
+    <section class="step" id="step-2" data-step="2">
+      <div class="step-intro">
+        <h2>Select your appliances</h2>
+        <p>Check everything you want to run during a power outage. Adjust quantities in the next step.</p>
+      </div>
+
+      <div class="tab-bar" role="tablist" aria-label="Appliance categories">
+        <button class="tab-btn active" role="tab" aria-selected="true" data-tab="essential">Essential</button>
+        <button class="tab-btn" role="tab" aria-selected="false" data-tab="kitchen">Kitchen</button>
+        <button class="tab-btn" role="tab" aria-selected="false" data-tab="hvac">HVAC &amp; Heat</button>
+        <button class="tab-btn" role="tab" aria-selected="false" data-tab="laundry">Laundry</button>
+        <button class="tab-btn" role="tab" aria-selected="false" data-tab="entertainment">Entertainment</button>
+        <button class="tab-btn" role="tab" aria-selected="false" data-tab="medical">Medical</button>
+        <button class="tab-btn" role="tab" aria-selected="false" data-tab="outdoor">Outdoor</button>
+        <button class="tab-btn" role="tab" aria-selected="false" data-tab="custom">+ Custom</button>
+      </div>
+
+      <div class="appliance-panel" id="appliance-panel">
+        <!-- Populated by calculator.js -->
+      </div>
+
+      <!-- Custom appliance form (shown when custom tab active) -->
+      <div class="custom-form" id="custom-form" style="display:none">
+        <h3>Add a custom appliance</h3>
+        <div class="custom-fields">
+          <input type="text" id="custom-name" placeholder="Appliance name" maxlength="50" />
+          <div class="custom-watts-row">
+            <label>
+              Running watts
+              <input type="number" id="custom-running" placeholder="e.g. 1200" min="1" max="50000" />
+            </label>
+            <label>
+              Surge watts <span class="optional">(optional)</span>
+              <input type="number" id="custom-surge" placeholder="e.g. 3600" min="1" max="100000" />
+            </label>
+          </div>
+          <button class="btn btn-secondary" id="add-custom-btn">Add Appliance</button>
+        </div>
+      </div>
+
+      <!-- Running total badge -->
+      <div class="running-total-bar" id="running-total-bar">
+        <span class="rt-label">Selected load so far:</span>
+        <span class="rt-value" id="rt-running">0 W</span>
+        <span class="rt-sep">running</span>
+        <span class="rt-value rt-surge" id="rt-surge">0 W</span>
+        <span class="rt-sep">peak</span>
+      </div>
+    </section>
+
+    <!-- ── STEP 3: Review & Adjust ── -->
+    <section class="step" id="step-3" data-step="3">
+      <div class="step-intro">
+        <h2>Review &amp; adjust your list</h2>
+        <p>Update quantities or remove items. Totals update instantly.</p>
+      </div>
+
+      <div id="review-empty" class="empty-state" style="display:none">
+        <span class="empty-icon">🔌</span>
+        <p>No appliances selected yet. Go back and choose what you need to power.</p>
+      </div>
+
+      <div id="review-table-wrap" style="display:none">
+        <table class="review-table" aria-label="Selected appliances">
+          <thead>
+            <tr>
+              <th>Appliance</th>
+              <th class="col-qty">Qty</th>
+              <th class="col-watts">Running W</th>
+              <th class="col-watts">Surge W</th>
+              <th class="col-remove" aria-label="Remove"></th>
+            </tr>
+          </thead>
+          <tbody id="review-tbody"></tbody>
+          <tfoot>
+            <tr class="total-row">
+              <td colspan="2"><strong>Totals</strong></td>
+              <td><strong id="review-total-running">0 W</strong></td>
+              <td><strong id="review-total-surge">0 W</strong></td>
+              <td></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </section>
+
+    <!-- ── STEP 4: Results ── -->
+    <section class="step" id="step-4" data-step="4">
+      <div class="step-intro">
+        <h2>Your Generator Recommendation</h2>
+        <p>Based on your selections, here's what you need.</p>
+      </div>
+
+      <div class="results-grid">
+        <div class="stat-card">
+          <div class="stat-value" id="res-running">—</div>
+          <div class="stat-label">Running Watts</div>
+        </div>
+        <div class="stat-card stat-card-peak">
+          <div class="stat-value" id="res-peak">—</div>
+          <div class="stat-label">Peak / Surge Watts</div>
+        </div>
+      </div>
+
+      <div class="rec-card" id="rec-card">
+        <!-- Populated by JS -->
+      </div>
+
+      <div class="generator-type-block" id="generator-type-block">
+        <!-- Populated by JS -->
+      </div>
+
+      <div class="tips-block" id="tips-block">
+        <!-- Populated by JS -->
+      </div>
+
+      <div class="cta-block">
+        <p>Ready to find the right generator?</p>
+        <a class="btn btn-primary btn-cta" id="cta-btn" href="#">Browse Generators at Ontivity Power →</a>
+        <button class="btn btn-ghost btn-restart" id="btn-restart">Start Over</button>
+      </div>
+    </section>
+
+    <!-- Navigation -->
+    <div class="calc-nav">
+      <button class="btn btn-ghost" id="btn-back" style="visibility:hidden">← Back</button>
+      <button class="btn btn-primary" id="btn-next">Next →</button>
+    </div>
+
+  </div><!-- /.calc-wrapper -->
+
+  <script src="calculator.js"></script>
+</body>
+</html>
