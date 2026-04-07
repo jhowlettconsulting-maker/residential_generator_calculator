@@ -5,11 +5,6 @@
 
 'use strict';
 
-/* ── Appliance data ─────────────────────────────────────────
-   Each entry: { id, name, icon, running, surge, tab, fuelTag? }
-   fuelTag: if set, this appliance is auto-selected when the
-            matching fuel type is chosen in Step 1.
-   ─────────────────────────────────────────────────────────── */
 const APPLIANCES = [
   // ── Essential
   { id: 'lights',         name: 'Lights (10 LED bulbs)',        icon: '💡', running: 100,  surge: 100,  tab: 'essential' },
@@ -19,7 +14,6 @@ const APPLIANCES = [
   { id: 'well_half',      name: 'Well Pump (1/2 HP)',           icon: '💧', running: 1050, surge: 3200, tab: 'essential' },
   { id: 'garage_door',    name: 'Garage Door Opener',           icon: '🚗', running: 550,  surge: 1000, tab: 'essential' },
   { id: 'phone_charging', name: 'Phone / Device Charging',      icon: '🔋', running: 150,  surge: 150,  tab: 'essential' },
-
   // ── Kitchen
   { id: 'microwave',    name: 'Microwave Oven',           icon: '📡', running: 1000, surge: 1000, tab: 'kitchen' },
   { id: 'elec_range',   name: 'Electric Range / Oven',    icon: '🍳', running: 4000, surge: 4000, tab: 'kitchen' },
@@ -28,7 +22,6 @@ const APPLIANCES = [
   { id: 'toaster',      name: 'Toaster',                  icon: '🍞', running: 850,  surge: 850,  tab: 'kitchen' },
   { id: 'blender',      name: 'Blender',                  icon: '🥤', running: 400,  surge: 400,  tab: 'kitchen' },
   { id: 'kettle',       name: 'Electric Kettle',          icon: '🫖', running: 1500, surge: 1500, tab: 'kitchen' },
-
   // ── HVAC & Heating
   { id: 'ac_1ton',      name: 'Central AC — 1 ton (12k BTU)', icon: '❄️', running: 1500, surge: 4500,  tab: 'hvac' },
   { id: 'ac_2ton',      name: 'Central AC — 2 ton (24k BTU)', icon: '❄️', running: 2800, surge: 8400,  tab: 'hvac' },
@@ -41,25 +34,21 @@ const APPLIANCES = [
   { id: 'space_heater', name: 'Space Heater (Portable)',        icon: '🔆', running: 1500, surge: 1500,  tab: 'hvac', fuelTag: ['none'] },
   { id: 'ceiling_fan',  name: 'Ceiling Fan',                   icon: '🌀', running: 75,   surge: 75,    tab: 'hvac' },
   { id: 'attic_fan',    name: 'Attic / Bath Fan',              icon: '💨', running: 150,  surge: 150,   tab: 'hvac' },
-
   // ── Laundry
   { id: 'washer',       name: 'Washing Machine',         icon: '🫧', running: 1150, surge: 2250, tab: 'laundry' },
   { id: 'elec_dryer',   name: 'Electric Clothes Dryer',  icon: '♨️', running: 5400, surge: 6750, tab: 'laundry' },
   { id: 'gas_dryer',    name: 'Gas Clothes Dryer',       icon: '🌬️', running: 700,  surge: 1800, tab: 'laundry' },
-
   // ── Entertainment
   { id: 'tv',           name: 'TV — 55 inch',            icon: '📺', running: 130,  surge: 130,  tab: 'entertainment' },
   { id: 'desktop',      name: 'Desktop Computer',        icon: '🖥️', running: 500,  surge: 500,  tab: 'entertainment' },
   { id: 'laptop',       name: 'Laptop',                  icon: '💻', running: 100,  surge: 100,  tab: 'entertainment' },
   { id: 'console',      name: 'Gaming Console',          icon: '🎮', running: 200,  surge: 200,  tab: 'entertainment' },
   { id: 'home_theater', name: 'Home Theater / Soundbar', icon: '🔊', running: 300,  surge: 300,  tab: 'entertainment' },
-
   // ── Medical
   { id: 'cpap',         name: 'CPAP (no humidifier)',    icon: '😴', running: 50,  surge: 50,  tab: 'medical' },
   { id: 'cpap_humid',   name: 'CPAP (with humidifier)',  icon: '💨', running: 100, surge: 100, tab: 'medical' },
   { id: 'oxygen',       name: 'Oxygen Concentrator',     icon: '🫁', running: 300, surge: 300, tab: 'medical' },
   { id: 'nebulizer',    name: 'Nebulizer',               icon: '💊', running: 100, surge: 100, tab: 'medical' },
-
   // ── Outdoor & Workshop
   { id: 'pool_pump',    name: 'Pool Pump (1.5 HP)',         icon: '🏊', running: 2200, surge: 6600, tab: 'outdoor' },
   { id: 'ev_charger',   name: 'EV Charger — Level 2 (30A)', icon: '🚗', running: 7200, surge: 7200, tab: 'outdoor' },
@@ -68,13 +57,11 @@ const APPLIANCES = [
   { id: 'pressure_wash',name: 'Pressure Washer',             icon: '🚿', running: 1200, surge: 1200, tab: 'outdoor' },
 ];
 
-/* Default checked appliances per coverage level */
 const DEFAULTS = {
   essential: ['lights', 'fridge', 'sump', 'phone_charging'],
   whole:     ['lights', 'fridge', 'sump', 'phone_charging', 'washer', 'ac_2ton', 'tv'],
 };
 
-/* Fuel → appliance id to auto-check */
 const FUEL_APPLIANCE = {
   gas:      'gas_furnace',
   propane:  'gas_furnace',
@@ -84,17 +71,64 @@ const FUEL_APPLIANCE = {
   none:     'space_heater',
 };
 
-/* ── State ────────────────────────────────────────────────── */
 const state = {
   step:      0,
-  coverage:  null,   // 'essential' | 'whole'
-  fuel:      null,   // 'gas' | 'propane' | 'oil' | 'electric' | 'heatpump' | 'none'
-  selected:  {},     // { [id]: { qty: number } }
-  custom:    [],     // [{ id, name, running, surge }]
+  coverage:  null,
+  fuel:      null,
+  selected:  {},
+  custom:    [],
   activeTab: 'essential',
 };
 
 let customCounter = 0;
+
+/* ── Toast (replaces alert) ───────────────────────────────── */
+function showToast(msg) {
+  let toast = document.getElementById('calc-toast');
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.id = 'calc-toast';
+    toast.style.cssText = [
+      'position:fixed',
+      'bottom:28px',
+      'left:50%',
+      'transform:translateX(-50%) translateY(16px)',
+      'background:#1A2332',
+      'color:#fff',
+      'padding:12px 24px',
+      'border-radius:8px',
+      'font-size:0.875rem',
+      'font-weight:500',
+      'z-index:99999',
+      'box-shadow:0 4px 20px rgba(0,0,0,0.28)',
+      'opacity:0',
+      'transition:opacity 0.22s ease,transform 0.22s ease',
+      'pointer-events:none',
+      'white-space:nowrap',
+      'border-left:4px solid #F5820A',
+    ].join(';');
+    document.body.appendChild(toast);
+  }
+  toast.textContent = msg;
+  toast.style.opacity = '1';
+  toast.style.transform = 'translateX(-50%) translateY(0)';
+  clearTimeout(toast._timer);
+  toast._timer = setTimeout(() => {
+    toast.style.opacity = '0';
+    toast.style.transform = 'translateX(-50%) translateY(16px)';
+  }, 2800);
+}
+
+/* ── Safe scroll ──────────────────────────────────────────── */
+function safeScrollTop() {
+  try {
+    const wrapper = document.getElementById('generator-calculator');
+    if (wrapper) wrapper.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  } catch(e) {
+    try { document.documentElement.scrollTop = 0; } catch(e2) {}
+  }
+}
 
 /* ── Helpers ──────────────────────────────────────────────── */
 function fmt(watts) {
@@ -123,18 +157,18 @@ function calcTotals() {
     if (s > highestSurge) highestSurge = s;
   });
 
-  const peak      = running + highestSurge;
+  const peak        = running + highestSurge;
   const recommended = roundUp500(peak * 1.25);
-  const rangeMin  = roundUp500(recommended * 0.88);
-  const rangeMax  = recommended;
+  const rangeMin    = roundUp500(recommended * 0.88);
+  const rangeMax    = recommended;
 
   return { running, peak, recommended, rangeMin, rangeMax };
 }
 
-/* ── Rendering helpers ────────────────────────────────────── */
+/* ── Progress bar ─────────────────────────────────────────── */
 function updateProgressBar() {
   const fill = document.getElementById('progress-fill');
-  fill.style.width = ((state.step / 4) * 100) + '%';
+  if (fill) fill.style.width = ((state.step / 4) * 100) + '%';
 
   document.querySelectorAll('.step-label').forEach(el => {
     const s = parseInt(el.dataset.step);
@@ -151,17 +185,19 @@ function showStep(n) {
   const back = document.getElementById('btn-back');
   const next = document.getElementById('btn-next');
 
-  back.style.visibility = n === 0 ? 'hidden' : 'visible';
+  if (back) back.style.visibility = n === 0 ? 'hidden' : 'visible';
 
-  if (n === 4) {
-    next.style.display = 'none';
-  } else {
-    next.style.display = '';
-    next.textContent = n === 3 ? 'Calculate →' : 'Next →';
+  if (next) {
+    if (n === 4) {
+      next.style.display = 'none';
+    } else {
+      next.style.display = '';
+      next.textContent = n === 3 ? 'Calculate →' : 'Next →';
+    }
   }
 }
 
-/* ── Step 0: Coverage ─────────────────────────────────────── */
+/* ── Step 0 ───────────────────────────────────────────────── */
 function initStep0() {
   document.querySelectorAll('.coverage-card').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -172,7 +208,7 @@ function initStep0() {
   });
 }
 
-/* ── Step 1: Fuel ─────────────────────────────────────────── */
+/* ── Step 1 ───────────────────────────────────────────────── */
 function initStep1() {
   document.querySelectorAll('.fuel-card').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -183,15 +219,12 @@ function initStep1() {
   });
 }
 
-/* ── Step 2: Appliances ───────────────────────────────────── */
+/* ── Step 2 ───────────────────────────────────────────────── */
 function applyDefaults() {
-  /* Coverage defaults */
   const defaults = DEFAULTS[state.coverage] || DEFAULTS.essential;
   defaults.forEach(id => {
     if (!state.selected[id]) state.selected[id] = { qty: 1 };
   });
-
-  /* Fuel default */
   if (state.fuel) {
     const fuelId = FUEL_APPLIANCE[state.fuel];
     if (fuelId && !state.selected[fuelId]) {
@@ -208,13 +241,9 @@ function renderAppliancePanel() {
   if (tab === 'custom') {
     panel.innerHTML = '';
     customForm.style.display = '';
-
-    /* Render any custom appliances already added */
     if (state.custom.length > 0) {
       panel.style.display = 'grid';
-      state.custom.forEach(a => {
-        panel.appendChild(buildAppCard(a));
-      });
+      state.custom.forEach(a => panel.appendChild(buildAppCard(a)));
     } else {
       panel.style.display = 'none';
     }
@@ -265,19 +294,22 @@ function buildAppCard(a) {
   }
 
   div.addEventListener('click', toggle);
-  div.addEventListener('keydown', e => { if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); toggle(); } });
+  div.addEventListener('keydown', e => {
+    if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); toggle(); }
+  });
 
   return div;
 }
 
 function updateRunningTotal() {
   const { running, peak } = calcTotals();
-  document.getElementById('rt-running').textContent = fmt(running);
-  document.getElementById('rt-surge').textContent   = fmt(peak);
+  const rtRunning = document.getElementById('rt-running');
+  const rtSurge   = document.getElementById('rt-surge');
+  if (rtRunning) rtRunning.textContent = fmt(running);
+  if (rtSurge)   rtSurge.textContent   = fmt(peak);
 }
 
 function initStep2() {
-  /* Tab switching */
   document.querySelectorAll('.tab-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       state.activeTab = btn.dataset.tab;
@@ -289,14 +321,13 @@ function initStep2() {
     });
   });
 
-  /* Custom add button */
   document.getElementById('add-custom-btn').addEventListener('click', () => {
     const name    = document.getElementById('custom-name').value.trim();
     const running = parseInt(document.getElementById('custom-running').value);
     const surge   = parseInt(document.getElementById('custom-surge').value) || running;
 
     if (!name || !running || running < 1) {
-      alert('Please enter an appliance name and running watts.');
+      showToast('Please enter an appliance name and running watts.');
       return;
     }
 
@@ -313,13 +344,13 @@ function initStep2() {
   });
 }
 
-/* ── Step 3: Review ───────────────────────────────────────── */
+/* ── Step 3 ───────────────────────────────────────────────── */
 function renderReview() {
-  const tbody  = document.getElementById('review-tbody');
-  const empty  = document.getElementById('review-empty');
-  const wrap   = document.getElementById('review-table-wrap');
-  const all    = getAllAppliances();
-  const ids    = Object.keys(state.selected);
+  const tbody = document.getElementById('review-tbody');
+  const empty = document.getElementById('review-empty');
+  const wrap  = document.getElementById('review-table-wrap');
+  const all   = getAllAppliances();
+  const ids   = Object.keys(state.selected);
 
   if (ids.length === 0) {
     empty.style.display = '';
@@ -338,10 +369,7 @@ function renderReview() {
 
     const tr = document.createElement('tr');
     tr.innerHTML = `
-      <td>
-        <span aria-hidden="true">${a.icon}</span>
-        ${a.name}
-      </td>
+      <td><span aria-hidden="true">${a.icon}</span> ${a.name}</td>
       <td>
         <div class="qty-ctrl">
           <button class="qty-btn" data-action="dec" data-id="${id}" aria-label="Decrease quantity">−</button>
@@ -357,21 +385,17 @@ function renderReview() {
   });
 
   updateReviewTotals();
-
-  /* Delegate qty and remove events */
   tbody.addEventListener('click', handleReviewClick);
 }
 
 function handleReviewClick(e) {
   const btn = e.target.closest('button');
   if (!btn) return;
-
   const id = btn.dataset.id;
   if (!id) return;
 
   if (btn.classList.contains('remove-btn')) {
     delete state.selected[id];
-    /* Also remove from custom if applicable */
     state.custom = state.custom.filter(c => c.id !== id);
     renderReview();
     return;
@@ -389,7 +413,6 @@ function handleReviewClick(e) {
     }
   }
 
-  /* Update qty display and row watts without full re-render */
   const a = getAllAppliances().find(x => x.id === id);
   if (!a) return;
   const qty = state.selected[id].qty;
@@ -403,18 +426,19 @@ function handleReviewClick(e) {
 
 function updateReviewTotals() {
   const { running, peak } = calcTotals();
-  document.getElementById('review-total-running').textContent = fmt(running);
-  document.getElementById('review-total-surge').textContent   = fmt(peak);
+  const rtr = document.getElementById('review-total-running');
+  const rts = document.getElementById('review-total-surge');
+  if (rtr) rtr.textContent = fmt(running);
+  if (rts) rts.textContent = fmt(peak);
 }
 
-/* ── Step 4: Results ──────────────────────────────────────── */
+/* ── Step 4 ───────────────────────────────────────────────── */
 function renderResults() {
   const { running, peak, rangeMin, rangeMax } = calcTotals();
 
   document.getElementById('res-running').textContent = fmt(running);
   document.getElementById('res-peak').textContent    = fmt(peak);
 
-  /* Recommendation card */
   const recCard = document.getElementById('rec-card');
   let color, emoji, headline, desc;
 
@@ -442,9 +466,7 @@ function renderResults() {
     </div>
   `;
 
-  /* Generator type guidance */
-  const typeBlock = document.getElementById('generator-type-block');
-  typeBlock.innerHTML = `
+  document.getElementById('generator-type-block').innerHTML = `
     <strong>Portable vs. Standby — at a glance</strong>
     <table style="width:100%;border-collapse:collapse;font-size:.83rem;margin-top:6px">
       <thead><tr>
@@ -463,7 +485,6 @@ function renderResults() {
     </table>
   `;
 
-  /* Contextual tips */
   const tips = [
     `Your calculation includes a <strong>25% safety buffer</strong> — the industry-standard margin recommended by Generac, Kohler, and the NEC.`,
     `Always start motor-driven appliances (AC, pumps) one at a time to avoid overloading the generator during surge.`,
@@ -471,48 +492,34 @@ function renderResults() {
 
   const all = getAllAppliances();
   const ids = Object.keys(state.selected);
+  if (ids.includes('elec_dryer'))   tips.push('Switching to a <strong>gas clothes dryer</strong> (~700W) instead of electric (~5,400W) can reduce your required generator size significantly.');
+  if (ids.includes('elec_range'))   tips.push('An <strong>electric range uses 4,000W</strong>. A gas range or camping stove during outages can reduce your generator size by one full tier.');
+  if (ids.includes('ev_charger'))   tips.push('Your EV Level 2 charger draws <strong>7,200W</strong> — consider skipping EV charging during an outage or switching to a slower Level 1 charge.');
+  if (ids.includes('elec_furnace')) tips.push('Electric resistance heating is the highest-draw home system (~5,000W). A gas or propane furnace with a blower (~800W) would drastically reduce requirements.');
+  if (ids.some(id => id.startsWith('heatpump'))) tips.push('Heat pumps have high startup surge watts. Make sure your generator\'s <em>peak/surge</em> rating — not just running watts — meets your peak load.');
+  if (rangeMax > 20000)             tips.push('For loads above 20kW, consult a licensed electrician. Generator installation requires a proper transfer switch to meet NEC Article 702 and local codes.');
 
-  if (ids.includes('elec_dryer')) {
-    tips.push('Switching to a <strong>gas clothes dryer</strong> (~700W) instead of electric (~5,400W) can reduce your required generator size significantly.');
-  }
-  if (ids.includes('elec_range')) {
-    tips.push('An <strong>electric range uses 4,000W</strong>. A gas range or camping stove during outages can reduce your generator size by one full tier.');
-  }
-  if (ids.includes('ev_charger')) {
-    tips.push('Your EV Level 2 charger draws <strong>7,200W</strong> — consider skipping EV charging during an outage or switching to a slower Level 1 charge to reduce load.');
-  }
-  if (ids.includes('elec_furnace')) {
-    tips.push('Electric resistance heating is the highest-draw home system (~5,000W). A gas or propane furnace with a blower (~800W) would drastically reduce generator requirements.');
-  }
-  if (ids.some(id => id.startsWith('heatpump'))) {
-    tips.push('Heat pumps have high startup surge watts. Make sure your generator's <em>peak/surge</em> rating — not just running watts — meets or exceeds your peak load.');
-  }
-  if (rangeMax > 20000) {
-    tips.push('For loads above 20kW, consult a licensed electrician. Generator installation requires a proper transfer switch to meet NEC Article 702 and local codes.');
-  }
-
-  const tipsBlock = document.getElementById('tips-block');
-  tipsBlock.innerHTML = `
+  document.getElementById('tips-block').innerHTML = `
     <h3>Sizing tips</h3>
     <ul class="tips-list">
       ${tips.slice(0, 5).map(t => `<li>${t}</li>`).join('')}
     </ul>
   `;
 
-  /* CTA */
   const wrapper = document.getElementById('generator-calculator');
-  const ctaUrl  = wrapper.dataset.ctaUrl || '#';
-  document.getElementById('cta-btn').href = ctaUrl;
+  const ctaUrl  = wrapper ? (wrapper.dataset.ctaUrl || '#') : '#';
+  const ctaBtn  = document.getElementById('cta-btn');
+  if (ctaBtn) ctaBtn.href = ctaUrl;
 }
 
 /* ── Navigation ───────────────────────────────────────────── */
 function canAdvance() {
   if (state.step === 0 && !state.coverage) {
-    alert('Please select a coverage level to continue.');
+    showToast('Please select a coverage level to continue.');
     return false;
   }
   if (state.step === 1 && !state.fuel) {
-    alert('Please select your primary heating fuel type to continue.');
+    showToast('Please select your primary heating fuel type to continue.');
     return false;
   }
   return true;
@@ -522,24 +529,17 @@ function goNext() {
   if (!canAdvance()) return;
 
   if (state.step === 1) {
-    /* Apply defaults before showing appliance step */
     applyDefaults();
     renderAppliancePanel();
     updateRunningTotal();
   }
-
-  if (state.step === 2) {
-    renderReview();
-  }
-
-  if (state.step === 3) {
-    renderResults();
-  }
+  if (state.step === 2) renderReview();
+  if (state.step === 3) renderResults();
 
   state.step++;
   showStep(state.step);
   updateProgressBar();
-  window.scrollTo({ top: 0, behavior: 'smooth' });
+  safeScrollTop();
 }
 
 function goBack() {
@@ -547,11 +547,10 @@ function goBack() {
   state.step--;
   showStep(state.step);
   updateProgressBar();
-  window.scrollTo({ top: 0, behavior: 'smooth' });
+  safeScrollTop();
 }
 
 function restart() {
-  /* Reset state */
   state.step      = 0;
   state.coverage  = null;
   state.fuel      = null;
@@ -559,7 +558,6 @@ function restart() {
   state.custom    = [];
   state.activeTab = 'essential';
 
-  /* Reset UI */
   document.querySelectorAll('.coverage-card').forEach(b => b.setAttribute('aria-pressed', 'false'));
   document.querySelectorAll('.fuel-card').forEach(b => b.setAttribute('aria-pressed', 'false'));
   document.querySelectorAll('.tab-btn').forEach((b, i) => {
@@ -569,7 +567,7 @@ function restart() {
 
   showStep(0);
   updateProgressBar();
-  window.scrollTo({ top: 0, behavior: 'smooth' });
+  safeScrollTop();
 }
 
 /* ── Init ─────────────────────────────────────────────────── */
