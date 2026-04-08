@@ -1,727 +1,539 @@
 /* ============================================================
-   Ontivity Power — Residential Generator Calculator
-   calculator.js — data, state, rendering, calculations
+   Ontivity Power — Generator Calculator
+   Branching: Residential / Commercial / Industrial
    ============================================================ */
-
 'use strict';
 
+/* ── Appliance data ─────────────────────────────────────── */
 const APPLIANCES = [
-  // ── Essential
-  { id: 'lights',         name: 'Lights (10 LED bulbs)',        icon: '💡', running: 100,  surge: 100,  tab: 'essential' },
-  { id: 'fridge',         name: 'Refrigerator / Freezer',       icon: '🧊', running: 700,  surge: 2200, tab: 'essential' },
-  { id: 'sump',           name: 'Sump Pump (1/3 HP)',           icon: '🪣', running: 800,  surge: 2900, tab: 'essential' },
-  { id: 'well_third',     name: 'Well Pump (1/3 HP)',           icon: '💧', running: 1000, surge: 3100, tab: 'essential' },
-  { id: 'well_half',      name: 'Well Pump (1/2 HP)',           icon: '💧', running: 1050, surge: 3200, tab: 'essential' },
-  { id: 'garage_door',    name: 'Garage Door Opener',           icon: '🚗', running: 550,  surge: 1000, tab: 'essential' },
-  { id: 'phone_charging', name: 'Phone / Device Charging',      icon: '🔋', running: 150,  surge: 150,  tab: 'essential' },
-  // ── Kitchen
-  { id: 'microwave',    name: 'Microwave Oven',           icon: '📡', running: 1000, surge: 1000, tab: 'kitchen' },
-  { id: 'elec_range',   name: 'Electric Range / Oven',    icon: '🍳', running: 4000, surge: 4000, tab: 'kitchen' },
-  { id: 'dishwasher',   name: 'Dishwasher',               icon: '🍽️', running: 1800, surge: 1800, tab: 'kitchen' },
-  { id: 'coffee',       name: 'Coffee Maker',             icon: '☕', running: 1000, surge: 1000, tab: 'kitchen' },
-  { id: 'toaster',      name: 'Toaster',                  icon: '🍞', running: 850,  surge: 850,  tab: 'kitchen' },
-  { id: 'blender',      name: 'Blender',                  icon: '🥤', running: 400,  surge: 400,  tab: 'kitchen' },
-  { id: 'kettle',       name: 'Electric Kettle',          icon: '🫖', running: 1500, surge: 1500, tab: 'kitchen' },
-  // ── HVAC & Heating
-  { id: 'ac_1ton',      name: 'Central AC — 1 ton (12k BTU)', icon: '❄️', running: 1500, surge: 4500,  tab: 'hvac' },
-  { id: 'ac_2ton',      name: 'Central AC — 2 ton (24k BTU)', icon: '❄️', running: 2800, surge: 8400,  tab: 'hvac' },
-  { id: 'ac_3ton',      name: 'Central AC — 3 ton (36k BTU)', icon: '❄️', running: 3800, surge: 11400, tab: 'hvac' },
-  { id: 'window_ac',    name: 'Window AC (10,000 BTU)',        icon: '🌬️', running: 1200, surge: 3600,  tab: 'hvac' },
-  { id: 'gas_furnace',  name: 'Gas Furnace (1/2 HP blower)',   icon: '🔥', running: 800,  surge: 2350,  tab: 'hvac', fuelTag: ['gas', 'propane', 'oil'] },
-  { id: 'elec_furnace', name: 'Electric Furnace (5kW)',        icon: '⚡', running: 5000, surge: 5000,  tab: 'hvac', fuelTag: ['electric'] },
-  { id: 'heatpump_sm',  name: 'Heat Pump — Small System',      icon: '🌡️', running: 2000, surge: 6000,  tab: 'hvac', fuelTag: ['heatpump'] },
-  { id: 'heatpump_lg',  name: 'Heat Pump — Large System',      icon: '🌡️', running: 5000, surge: 15000, tab: 'hvac' },
-  { id: 'space_heater', name: 'Space Heater (Portable)',        icon: '🔆', running: 1500, surge: 1500,  tab: 'hvac', fuelTag: ['none'] },
-  { id: 'ceiling_fan',  name: 'Ceiling Fan',                   icon: '🌀', running: 75,   surge: 75,    tab: 'hvac' },
-  { id: 'attic_fan',    name: 'Attic / Bath Fan',              icon: '💨', running: 150,  surge: 150,   tab: 'hvac' },
-  // ── Laundry
-  { id: 'washer',       name: 'Washing Machine',         icon: '🫧', running: 1150, surge: 2250, tab: 'laundry' },
-  { id: 'elec_dryer',   name: 'Electric Clothes Dryer',  icon: '♨️', running: 5400, surge: 6750, tab: 'laundry' },
-  { id: 'gas_dryer',    name: 'Gas Clothes Dryer',       icon: '🌬️', running: 700,  surge: 1800, tab: 'laundry' },
-  // ── Entertainment
-  { id: 'tv',           name: 'TV — 55 inch',            icon: '📺', running: 130,  surge: 130,  tab: 'entertainment' },
-  { id: 'desktop',      name: 'Desktop Computer',        icon: '🖥️', running: 500,  surge: 500,  tab: 'entertainment' },
-  { id: 'laptop',       name: 'Laptop',                  icon: '💻', running: 100,  surge: 100,  tab: 'entertainment' },
-  { id: 'console',      name: 'Gaming Console',          icon: '🎮', running: 200,  surge: 200,  tab: 'entertainment' },
-  { id: 'home_theater', name: 'Home Theater / Soundbar', icon: '🔊', running: 300,  surge: 300,  tab: 'entertainment' },
-  // ── Medical
-  { id: 'cpap',         name: 'CPAP (no humidifier)',    icon: '😴', running: 50,  surge: 50,  tab: 'medical' },
-  { id: 'cpap_humid',   name: 'CPAP (with humidifier)',  icon: '💨', running: 100, surge: 100, tab: 'medical' },
-  { id: 'oxygen',       name: 'Oxygen Concentrator',     icon: '🫁', running: 300, surge: 300, tab: 'medical' },
-  { id: 'nebulizer',    name: 'Nebulizer',               icon: '💊', running: 100, surge: 100, tab: 'medical' },
-  // ── Outdoor & Workshop
-  { id: 'pool_pump',    name: 'Pool Pump (1.5 HP)',         icon: '🏊', running: 2200, surge: 6600, tab: 'outdoor' },
-  { id: 'ev_charger',   name: 'EV Charger — Level 2 (30A)', icon: '🚗', running: 7200, surge: 7200, tab: 'outdoor' },
-  { id: 'air_comp',     name: 'Air Compressor (1 HP)',       icon: '🔧', running: 1000, surge: 3000, tab: 'outdoor' },
-  { id: 'table_saw',    name: 'Table Saw (10 in)',           icon: '🪚', running: 1800, surge: 4500, tab: 'outdoor' },
-  { id: 'pressure_wash',name: 'Pressure Washer',             icon: '🚿', running: 1200, surge: 1200, tab: 'outdoor' },
+  {id:'lights',name:'Lights (10 LED bulbs)',icon:'💡',running:100,surge:100,tab:'essential'},
+  {id:'fridge',name:'Refrigerator / Freezer',icon:'🧊',running:700,surge:2200,tab:'essential'},
+  {id:'sump',name:'Sump Pump (1/3 HP)',icon:'🪣',running:800,surge:2900,tab:'essential'},
+  {id:'well_third',name:'Well Pump (1/3 HP)',icon:'💧',running:1000,surge:3100,tab:'essential'},
+  {id:'well_half',name:'Well Pump (1/2 HP)',icon:'💧',running:1050,surge:3200,tab:'essential'},
+  {id:'garage_door',name:'Garage Door Opener',icon:'🚗',running:550,surge:1000,tab:'essential'},
+  {id:'phone_charging',name:'Phone / Device Charging',icon:'🔋',running:150,surge:150,tab:'essential'},
+  {id:'microwave',name:'Microwave Oven',icon:'📡',running:1000,surge:1000,tab:'kitchen'},
+  {id:'elec_range',name:'Electric Range / Oven',icon:'🍳',running:4000,surge:4000,tab:'kitchen'},
+  {id:'dishwasher',name:'Dishwasher',icon:'🍽️',running:1800,surge:1800,tab:'kitchen'},
+  {id:'coffee',name:'Coffee Maker',icon:'☕',running:1000,surge:1000,tab:'kitchen'},
+  {id:'toaster',name:'Toaster',icon:'🍞',running:850,surge:850,tab:'kitchen'},
+  {id:'blender',name:'Blender',icon:'🥤',running:400,surge:400,tab:'kitchen'},
+  {id:'kettle',name:'Electric Kettle',icon:'🫖',running:1500,surge:1500,tab:'kitchen'},
+  {id:'ac_1ton',name:'Central AC — 1 ton',icon:'❄️',running:1500,surge:4500,tab:'hvac'},
+  {id:'ac_2ton',name:'Central AC — 2 ton',icon:'❄️',running:2800,surge:8400,tab:'hvac'},
+  {id:'ac_3ton',name:'Central AC — 3 ton',icon:'❄️',running:3800,surge:11400,tab:'hvac'},
+  {id:'window_ac',name:'Window AC (10,000 BTU)',icon:'🌬️',running:1200,surge:3600,tab:'hvac'},
+  {id:'gas_furnace',name:'Gas Furnace (1/2 HP blower)',icon:'🔥',running:800,surge:2350,tab:'hvac'},
+  {id:'elec_furnace',name:'Electric Furnace (5kW)',icon:'⚡',running:5000,surge:5000,tab:'hvac'},
+  {id:'heatpump_sm',name:'Heat Pump — Small System',icon:'🌡️',running:2000,surge:6000,tab:'hvac'},
+  {id:'heatpump_lg',name:'Heat Pump — Large System',icon:'🌡️',running:5000,surge:15000,tab:'hvac'},
+  {id:'space_heater',name:'Space Heater (Portable)',icon:'🔆',running:1500,surge:1500,tab:'hvac'},
+  {id:'ceiling_fan',name:'Ceiling Fan',icon:'🌀',running:75,surge:75,tab:'hvac'},
+  {id:'attic_fan',name:'Attic / Bath Fan',icon:'💨',running:150,surge:150,tab:'hvac'},
+  {id:'washer',name:'Washing Machine',icon:'🫧',running:1150,surge:2250,tab:'laundry'},
+  {id:'elec_dryer',name:'Electric Clothes Dryer',icon:'♨️',running:5400,surge:6750,tab:'laundry'},
+  {id:'gas_dryer',name:'Gas Clothes Dryer',icon:'🌬️',running:700,surge:1800,tab:'laundry'},
+  {id:'tv',name:'TV — 55 inch',icon:'📺',running:130,surge:130,tab:'entertainment'},
+  {id:'desktop',name:'Desktop Computer',icon:'🖥️',running:500,surge:500,tab:'entertainment'},
+  {id:'laptop',name:'Laptop',icon:'💻',running:100,surge:100,tab:'entertainment'},
+  {id:'console',name:'Gaming Console',icon:'🎮',running:200,surge:200,tab:'entertainment'},
+  {id:'home_theater',name:'Home Theater / Soundbar',icon:'🔊',running:300,surge:300,tab:'entertainment'},
+  {id:'cpap',name:'CPAP (no humidifier)',icon:'😴',running:50,surge:50,tab:'medical'},
+  {id:'cpap_humid',name:'CPAP (with humidifier)',icon:'💨',running:100,surge:100,tab:'medical'},
+  {id:'oxygen',name:'Oxygen Concentrator',icon:'🫁',running:300,surge:300,tab:'medical'},
+  {id:'nebulizer',name:'Nebulizer',icon:'💊',running:100,surge:100,tab:'medical'},
+  {id:'pool_pump',name:'Pool Pump (1.5 HP)',icon:'🏊',running:2200,surge:6600,tab:'outdoor'},
+  {id:'ev_charger',name:'EV Charger — Level 2',icon:'🚗',running:7200,surge:7200,tab:'outdoor'},
+  {id:'air_comp',name:'Air Compressor (1 HP)',icon:'🔧',running:1000,surge:3000,tab:'outdoor'},
+  {id:'table_saw',name:'Table Saw (10 in)',icon:'🪚',running:1800,surge:4500,tab:'outdoor'},
+  {id:'pressure_wash',name:'Pressure Washer',icon:'🚿',running:1200,surge:1200,tab:'outdoor'},
 ];
 
 const DEFAULTS = {
-  residential: {
-    essential: ['lights', 'fridge', 'sump', 'phone_charging'],
-    whole:     ['lights', 'fridge', 'sump', 'phone_charging', 'washer', 'ac_2ton', 'tv'],
-  },
-  commercial: {
-    essential: ['lights', 'fridge', 'desktop', 'phone_charging'],
-    whole:     ['lights', 'fridge', 'desktop', 'tv', 'ac_2ton', 'coffee'],
-  },
-  industrial: {
-    essential: ['lights', 'air_comp', 'phone_charging'],
-    whole:     ['lights', 'air_comp', 'table_saw', 'pressure_wash', 'ac_3ton'],
-  },
+  essential: ['lights','fridge','sump','phone_charging'],
+  whole:     ['lights','fridge','sump','phone_charging','washer','ac_2ton','tv'],
+};
+const FUEL_MAP = {gas:'gas_furnace',propane:'gas_furnace',oil:'gas_furnace',electric:'elec_furnace',heatpump:'heatpump_sm',none:'space_heater'};
+
+const TRACK_LABELS = {
+  residential: ['Coverage','Heating','Appliances','Review','Results'],
+  commercial:  ['Property','Systems','Coverage','Assessment'],
+  industrial:  ['Operation','Critical Loads','Downtime','Assessment'],
 };
 
-const FUEL_APPLIANCE = {
-  gas:      'gas_furnace',
-  propane:  'gas_furnace',
-  oil:      'gas_furnace',
-  electric: 'elec_furnace',
-  heatpump: 'heatpump_sm',
-  none:     'space_heater',
-};
-
+/* ── State ──────────────────────────────────────────────── */
 const state = {
-  segment:   null,
-  step:      0,
-  coverage:  null,
-  fuel:      null,
-  selected:  {},
-  custom:    [],
-  activeTab: 'essential',
+  segment: null,  // 'residential' | 'commercial' | 'industrial'
+  step: 0,        // 0 = branch screen
+  r: { coverage:null, fuel:null, selected:{}, custom:[], activeTab:'essential' },
+  c: { buildingType:'', sqft:'', tenants:'', existing:'', criticalSystems:[], coverageScope:null, tolerance:'', runtime:'' },
+  i: { industry:'', facilitySize:'', demand:'', shifts:'', criticalLoads:[], downtimeCost:null, transfer:'', redundancy:'' },
 };
-
 let customCounter = 0;
 
-/* ── Toast (replaces alert) ───────────────────────────────── */
-function showToast(msg) {
-  let toast = document.getElementById('calc-toast');
-  if (!toast) {
-    toast = document.createElement('div');
-    toast.id = 'calc-toast';
-    toast.style.cssText = [
-      'position:fixed',
-      'bottom:28px',
-      'left:50%',
-      'transform:translateX(-50%) translateY(16px)',
-      'background:#1A2332',
-      'color:#fff',
-      'padding:12px 24px',
-      'border-radius:8px',
-      'font-size:0.875rem',
-      'font-weight:500',
-      'z-index:99999',
-      'box-shadow:0 4px 20px rgba(0,0,0,0.28)',
-      'opacity:0',
-      'transition:opacity 0.22s ease,transform 0.22s ease',
-      'pointer-events:none',
-      'white-space:nowrap',
-      'border-left:4px solid #F5820A',
-    ].join(';');
-    document.body.appendChild(toast);
+/* ── Utilities ──────────────────────────────────────────── */
+function fmt(w){ return w>=1000?(w/1000).toFixed(w%1000===0?0:1)+' kW':w.toLocaleString()+' W'; }
+function roundUp500(n){ return Math.ceil(n/500)*500; }
+function getAllAppliances(){ return [...APPLIANCES,...state.r.custom]; }
+
+function showToast(msg){
+  let t=document.getElementById('calc-toast');
+  if(!t){
+    t=document.createElement('div');t.id='calc-toast';
+    t.style.cssText='position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(16px);background:#111;color:#fff;padding:12px 24px;border-radius:8px;font-size:0.875rem;font-weight:500;z-index:99999;box-shadow:0 4px 20px rgba(0,0,0,0.28);opacity:0;transition:opacity 0.22s ease,transform 0.22s ease;pointer-events:none;white-space:nowrap;border-left:4px solid #CBE83B;';
+    document.body.appendChild(t);
   }
-  toast.textContent = msg;
-  toast.style.opacity = '1';
-  toast.style.transform = 'translateX(-50%) translateY(0)';
-  clearTimeout(toast._timer);
-  toast._timer = setTimeout(() => {
-    toast.style.opacity = '0';
-    toast.style.transform = 'translateX(-50%) translateY(16px)';
-  }, 2800);
+  t.textContent=msg;t.style.opacity='1';t.style.transform='translateX(-50%) translateY(0)';
+  clearTimeout(t._timer);
+  t._timer=setTimeout(()=>{t.style.opacity='0';t.style.transform='translateX(-50%) translateY(16px)';},2800);
 }
 
-/* ── Safe scroll ─────────────────────────────────────────── */
-function safeScrollTop() {
-  try {
-    const wrapper = document.getElementById('generator-calculator');
-    if (wrapper) wrapper.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  } catch(e) {
-    try { document.documentElement.scrollTop = 0; } catch(e2) {}
-  }
+function safeScroll(){
+  try{ document.getElementById('generator-calculator').scrollIntoView({behavior:'smooth',block:'start'}); }catch(e){}
 }
 
-function showResidentialFlow(show) {
-  const flow = document.getElementById('residential-flow');
-  if (flow) flow.style.display = show ? '' : 'none';
-  const nav = document.getElementById('calc-nav');
-  if (nav) nav.style.display = show ? '' : 'none';
+/* ── UI scaffolding ─────────────────────────────────────── */
+function showBranchScreen(){
+  document.getElementById('branch-screen').style.display='';
+  document.getElementById('progress-wrap').style.display='none';
+  document.getElementById('calc-nav').style.display='none';
+  document.getElementById('track-badge').classList.remove('visible');
+  document.querySelectorAll('.step').forEach(s=>s.classList.remove('active'));
+  document.getElementById('calc-title').textContent='Generator Power Calculator';
+  document.getElementById('calc-subtitle').textContent='Tell us about your situation and we\'ll help you find the right solution.';
 }
 
-function showBranchStep(show) {
-  const branch = document.getElementById('branch-step');
-  if (branch) branch.style.display = show ? '' : 'none';
-}
+function enterTrack(segment){
+  document.getElementById('branch-screen').style.display='none';
+  document.getElementById('progress-wrap').style.display='';
+  document.getElementById('calc-nav').style.display='';
 
-function updateCalculatorHeading(segment) {
-  const title = document.getElementById('calc-title');
-  const subtitle = document.getElementById('calc-subtitle');
-  const headings = {
-    residential: {
-      title: 'Residential Generator Calculator',
-      subtitle: 'Estimate backup power needs for your home.',
-    },
-    commercial: {
-      title: 'Commercial Generator Calculator',
-      subtitle: 'Estimate backup power needs for offices, retail, and business operations.',
-    },
-    industrial: {
-      title: 'Industrial Generator Calculator',
-      subtitle: 'Estimate backup power needs for high-demand and heavy-duty operations.',
-    },
+  const badge=document.getElementById('track-badge');
+  badge.classList.add('visible');
+  const names={residential:'Residential',commercial:'Commercial',industrial:'Industrial'};
+  document.getElementById('track-label').textContent=names[segment];
+
+  const titles={
+    residential:{t:'Residential Backup Planning',s:"Get a realistic estimate of what your home actually needs — so you're not guessing when it matters."},
+    commercial: {t:'Commercial Power Continuity',s:"Understand what needs to stay running — and what it actually takes to support it."},
+    industrial: {t:'Industrial Power Systems',s:"Identify the level of system your operation actually requires — before design decisions are made."},
   };
-  const chosen = headings[segment] || {
-    title: 'Generator Power Calculator',
-    subtitle: 'Answer a few quick questions and we’ll recommend the right generator size for your property.',
-  };
+  document.getElementById('calc-title').textContent=titles[segment].t;
+  document.getElementById('calc-subtitle').textContent=titles[segment].s;
 
-  if (title) title.textContent = chosen.title;
-  if (subtitle) subtitle.textContent = chosen.subtitle;
-}
-
-function initBranching() {
-  document.querySelectorAll('.segment-card').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const segment = btn.dataset.segment;
-      state.segment = segment;
-      document.querySelectorAll('.segment-card').forEach(b => b.setAttribute('aria-pressed', String(b === btn)));
-
-      showBranchStep(false);
-      showResidentialFlow(true);
-      updateCalculatorHeading(segment);
-      restart();
-      showStep(0);
-      updateProgressBar();
-      safeScrollTop();
-    });
-  });
-}
-
-/* ── Helpers ──────────────────────────────────────────────── */
-function fmt(watts) {
-  if (watts >= 1000) return (watts / 1000).toFixed(watts % 1000 === 0 ? 0 : 1) + ' kW';
-  return watts.toLocaleString() + ' W';
-}
-
-function roundUp500(n) {
-  return Math.ceil(n / 500) * 500;
-}
-
-function getAllAppliances() {
-  return [...APPLIANCES, ...state.custom];
-}
-
-function calcTotals() {
-  const all = getAllAppliances();
-  let running = 0;
-  let highestSurge = 0;
-
-  Object.entries(state.selected).forEach(([id, { qty }]) => {
-    const a = all.find(x => x.id === id);
-    if (!a) return;
-    running += a.running * qty;
-    const s = (a.surge || a.running) * qty;
-    if (s > highestSurge) highestSurge = s;
-  });
-
-  const peak        = running + highestSurge;
-  const recommended = roundUp500(peak * 1.25);
-  const rangeMin    = roundUp500(recommended * 0.88);
-  const rangeMax    = recommended;
-
-  return { running, peak, recommended, rangeMin, rangeMax };
-}
-
-/* ── Progress bar ─────────────────────────────────────────── */
-function updateProgressBar() {
-  const fill = document.getElementById('progress-fill');
-  if (fill) fill.style.width = ((state.step / 4) * 100) + '%';
-
-  document.querySelectorAll('.step-label').forEach(el => {
-    const s = parseInt(el.dataset.step);
-    el.classList.toggle('active', s === state.step);
-    el.classList.toggle('done', s < state.step);
-  });
-}
-
-function showStep(n) {
-  document.querySelectorAll('.step').forEach(el => {
-    el.classList.toggle('active', parseInt(el.dataset.step) === n);
-  });
-
-  const back = document.getElementById('btn-back');
-  const next = document.getElementById('btn-next');
-
-  if (back) back.style.visibility = n === 0 ? 'hidden' : 'visible';
-
-  if (next) {
-    if (n === 4) {
-      next.style.display = 'none';
-    } else {
-      next.style.display = '';
-      next.textContent = n === 3 ? 'Calculate →' : 'Next →';
-    }
-  }
-}
-
-/* ── Step 0 ───────────────────────────────────────────────── */
-function initStep0() {
-  document.querySelectorAll('.coverage-card').forEach(btn => {
-    if (btn.classList.contains('segment-card')) return;
-    btn.addEventListener('click', () => {
-      state.coverage = btn.dataset.coverage;
-      document.querySelectorAll('.coverage-card').forEach(b => {
-        if (!b.classList.contains('segment-card')) b.setAttribute('aria-pressed', 'false');
-      });
-      btn.setAttribute('aria-pressed', 'true');
-    });
-  });
-}
-
-/* ── Step 1 ───────────────────────────────────────────────── */
-function initStep1() {
-  document.querySelectorAll('.fuel-card').forEach(btn => {
-    btn.addEventListener('click', () => {
-      state.fuel = btn.dataset.fuel;
-      document.querySelectorAll('.fuel-card').forEach(b => b.setAttribute('aria-pressed', 'false'));
-      btn.setAttribute('aria-pressed', 'true');
-    });
-  });
-}
-
-/* ── Step 2 ───────────────────────────────────────────────── */
-function applyDefaults() {
-  const segment = state.segment || 'residential';
-  const segmentDefaults = DEFAULTS[segment] || DEFAULTS.residential;
-  const defaults = segmentDefaults[state.coverage] || segmentDefaults.essential;
-  defaults.forEach(id => {
-    if (!state.selected[id]) state.selected[id] = { qty: 1 };
-  });
-  if (state.fuel) {
-    const fuelId = FUEL_APPLIANCE[state.fuel];
-    if (fuelId && !state.selected[fuelId]) {
-      state.selected[fuelId] = { qty: 1 };
-    }
-  }
-}
-
-function renderAppliancePanel() {
-  const panel = document.getElementById('appliance-panel');
-  const customForm = document.getElementById('custom-form');
-  const tab = state.activeTab;
-
-  if (tab === 'custom') {
-    panel.innerHTML = '';
-    customForm.style.display = '';
-    if (state.custom.length > 0) {
-      panel.style.display = 'grid';
-      state.custom.forEach(a => panel.appendChild(buildAppCard(a)));
-    } else {
-      panel.style.display = 'none';
-    }
-    return;
-  }
-
-  customForm.style.display = 'none';
-  panel.style.display = 'grid';
-  panel.innerHTML = '';
-
-  APPLIANCES.filter(a => a.tab === tab).forEach(a => {
-    panel.appendChild(buildAppCard(a));
-  });
-}
-
-function buildAppCard(a) {
-  const selected = !!state.selected[a.id];
-  const card = document.createElement('button');
-  card.type = 'button';
-  card.className = 'app-card' + (selected ? ' selected' : '');
-  card.setAttribute('aria-pressed', String(selected));
-  card.innerHTML = `
-    <span class="app-check"></span>
-    <span class="app-icon">${a.icon || '🔌'}</span>
-    <span class="app-info">
-      <span class="app-name">${a.name}</span>
-      <span class="app-watts">${fmt(a.running)} running${a.surge && a.surge !== a.running ? ` • ${fmt(a.surge)} surge` : ''}</span>
-    </span>
-  `;
-  card.addEventListener('click', () => {
-    if (state.selected[a.id]) {
-      delete state.selected[a.id];
-    } else {
-      state.selected[a.id] = { qty: 1 };
-    }
-    renderAppliancePanel();
-    updateRunningTotalBar();
-  });
-  return card;
-}
-
-function initStep2() {
-  document.querySelectorAll('.tab-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const tab = btn.dataset.tab;
-      state.activeTab = tab;
-      document.querySelectorAll('.tab-btn').forEach(b => {
-        b.classList.toggle('active', b === btn);
-        b.setAttribute('aria-selected', String(b === btn));
-      });
-      renderAppliancePanel();
-    });
-  });
-
-  const addBtn = document.getElementById('add-custom-btn');
-  if (addBtn) {
-    addBtn.addEventListener('click', (e) => {
-      e.preventDefault();
-      const nameEl = document.getElementById('custom-name');
-      const runEl = document.getElementById('custom-running');
-      const surgeEl = document.getElementById('custom-surge');
-
-      const name = (nameEl.value || '').trim();
-      const running = parseInt(runEl.value, 10);
-      const surge = surgeEl.value ? parseInt(surgeEl.value, 10) : running;
-
-      if (!name) return showToast('Please enter an appliance name.');
-      if (!running || running < 1) return showToast('Please enter valid running watts.');
-
-      const id = `custom_${++customCounter}`;
-      const custom = {
-        id,
-        name,
-        icon: '🛠️',
-        running,
-        surge: surge >= running ? surge : running,
-        tab: 'custom',
-        custom: true,
-      };
-      state.custom.push(custom);
-      state.selected[id] = { qty: 1 };
-
-      nameEl.value = '';
-      runEl.value = '';
-      surgeEl.value = '';
-
-      renderAppliancePanel();
-      updateRunningTotalBar();
-      showToast('Custom appliance added.');
-    });
-  }
-}
-
-function updateRunningTotalBar() {
-  const { running, peak } = calcTotals();
-  const rtRunning = document.getElementById('rt-running');
-  const rtSurge = document.getElementById('rt-surge');
-  if (rtRunning) rtRunning.textContent = fmt(running);
-  if (rtSurge) rtSurge.textContent = fmt(peak);
-}
-
-/* ── Step 3 ───────────────────────────────────────────────── */
-function renderReview() {
-  const tbody = document.getElementById('review-tbody');
-  const empty = document.getElementById('review-empty');
-  const wrap = document.getElementById('review-table-wrap');
-
-  const all = getAllAppliances();
-  const ids = Object.keys(state.selected);
-
-  if (!tbody || !empty || !wrap) return;
-
-  if (ids.length === 0) {
-    tbody.innerHTML = '';
-    empty.style.display = '';
-    wrap.style.display = 'none';
-    document.getElementById('review-total-running').textContent = '0 W';
-    document.getElementById('review-total-surge').textContent = '0 W';
-    return;
-  }
-
-  empty.style.display = 'none';
-  wrap.style.display = '';
-
-  tbody.innerHTML = '';
-  ids.forEach(id => {
-    const a = all.find(x => x.id === id);
-    const qty = state.selected[id].qty;
-    if (!a) return;
-
-    const tr = document.createElement('tr');
-    tr.dataset.id = id;
-    tr.innerHTML = `
-      <td>${a.name}</td>
-      <td>
-        <div class="qty-ctrl">
-          <button class="qty-btn" data-action="dec" aria-label="Decrease quantity">−</button>
-          <span class="qty-num">${qty}</span>
-          <button class="qty-btn" data-action="inc" aria-label="Increase quantity">+</button>
-        </div>
-      </td>
-      <td>${fmt(a.running * qty)}</td>
-      <td>${fmt((a.surge || a.running) * qty)}</td>
-      <td class="col-remove"><button class="remove-btn" data-action="remove" aria-label="Remove">✕</button></td>
-    `;
-    tbody.appendChild(tr);
-  });
-
-  const totals = calcTotals();
-  document.getElementById('review-total-running').textContent = fmt(totals.running);
-  document.getElementById('review-total-surge').textContent = fmt(totals.peak);
-}
-
-function handleReviewTableClick(e) {
-  const btn = e.target.closest('button[data-action]');
-  if (!btn) return;
-
-  const tr = btn.closest('tr[data-id]');
-  if (!tr) return;
-
-  const id = tr.dataset.id;
-  const action = btn.dataset.action;
-  if (!state.selected[id]) return;
-
-  if (action === 'inc') {
-    state.selected[id].qty += 1;
-  } else if (action === 'dec') {
-    state.selected[id].qty = Math.max(1, state.selected[id].qty - 1);
-  } else if (action === 'remove') {
-    delete state.selected[id];
-  }
-
-  renderReview();
-  updateRunningTotalBar();
-}
-
-/* ── Step 4 ───────────────────────────────────────────────── */
-function buildRecommendation({ recommended }) {
-  if (recommended < 10000) {
-    return {
-      tone: 'green',
-      emoji: '✅',
-      heading: 'Compact standby recommendation',
-      blurb: 'Ideal for essential backup loads and selective circuits.',
-    };
-  }
-  if (recommended < 24000) {
-    return {
-      tone: 'amber',
-      emoji: '⚙️',
-      heading: 'Mid-range standby recommendation',
-      blurb: 'Great for larger homes or mixed-use backup requirements.',
-    };
-  }
-  return {
-    tone: 'red',
-    emoji: '🏭',
-    heading: 'High-capacity recommendation',
-    blurb: 'Best for extensive whole-property or high-demand applications.',
+  // Build step labels
+  const labels=TRACK_LABELS[segment];
+  document.getElementById('step-labels').innerHTML=labels.map((l,i)=>`<button class="step-label" data-step="${i+1}">${l}</button>`).join('');
+  // Re-attach click delegation each time labels are rebuilt
+  document.getElementById('step-labels').onclick = function(e) {
+    const btn = e.target.closest('.step-label');
+    if (!btn) return;
+    const target = parseInt(btn.dataset.step);
+    goToStep(target);
   };
 }
 
-function getGeneratorTypeText(recommended) {
-  if (recommended < 12000) {
-    return 'Portable or entry standby generator may be appropriate depending on transfer setup.';
-  }
-  if (recommended < 24000) {
-    return 'A whole-home standby generator with automatic transfer switch is typically recommended.';
-  }
-  return 'A commercial/industrial-grade standby solution and professional load analysis is strongly recommended.';
-}
+function showTrackStep(segment, step){
+  document.querySelectorAll('.step').forEach(s=>s.classList.remove('active'));
+  const prefix={residential:'r',commercial:'c',industrial:'i'}[segment];
+  const el=document.getElementById(`${prefix}-${step}`);
+  if(el) el.classList.add('active');
 
-function getTips(segment) {
-  const common = [
-    'Confirm starting loads with manufacturer nameplate ratings.',
-    'Plan for future expansion and seasonal load changes.',
-    'Consult a licensed electrician for transfer switch and code compliance.',
-  ];
+  // Progress bar
+  const total=TRACK_LABELS[segment].length;
+  document.getElementById('progress-fill').style.width=((step/total)*100)+'%';
 
-  if (segment === 'commercial') {
-    return [
-      'Identify business-critical circuits first (POS, refrigeration, lighting, internet).',
-      'Coordinate outage priorities by department.',
-      ...common,
-    ];
-  }
-
-  if (segment === 'industrial') {
-    return [
-      'Prioritize process-critical motors and controls.',
-      'Verify inrush/starting current assumptions with actual equipment data.',
-      ...common,
-    ];
-  }
-
-  return [
-    'Separate essential vs convenience loads to optimize generator size.',
-    'Account for HVAC startup surges in summer/winter peak conditions.',
-    ...common,
-  ];
-}
-
-function renderResults() {
-  const totals = calcTotals();
-
-  document.getElementById('res-running').textContent = fmt(totals.running);
-  document.getElementById('res-peak').textContent = fmt(totals.peak);
-
-  const rec = buildRecommendation(totals);
-  const recCard = document.getElementById('rec-card');
-  recCard.className = `rec-card ${rec.tone}`;
-  recCard.innerHTML = `
-    <div class="rec-emoji">${rec.emoji}</div>
-    <div class="rec-body">
-      <h3>${rec.heading}</h3>
-      <span class="rec-size">${fmt(totals.recommended)}</span>
-      <p>Recommended generator size range: <strong>${fmt(totals.rangeMin)} – ${fmt(totals.rangeMax)}</strong>. ${rec.blurb}</p>
-    </div>
-  `;
-
-  const typeBlock = document.getElementById('generator-type-block');
-  typeBlock.innerHTML = `
-    <strong>Generator type guidance</strong>
-    ${getGeneratorTypeText(totals.recommended)}
-  `;
-
-  const tipsList = document.getElementById('tips-list');
-  tipsList.innerHTML = '';
-  getTips(state.segment || 'residential').forEach(t => {
-    const li = document.createElement('li');
-    li.textContent = t;
-    tipsList.appendChild(li);
+  // Step labels
+  document.querySelectorAll('.step-label').forEach(el=>{
+    const s=parseInt(el.dataset.step);
+    el.classList.toggle('active', s===step);
+    el.classList.toggle('done', s<step);
   });
 
-  const wrapper = document.getElementById('generator-calculator');
-  const cta = document.getElementById('cta-btn');
-  const url = wrapper?.dataset?.ctaUrl || '#';
-  cta.href = url;
+  // Back/Next buttons
+  const back=document.getElementById('btn-back');
+  const next=document.getElementById('btn-next');
+  back.style.visibility='visible'; // always visible inside track — goes to branch if step===1
+  const isLast=step===total;
+  if(isLast||(segment==='industrial'&&step===4)){
+    next.style.display='none';
+  } else {
+    next.style.display='';
+    const isResReview=(segment==='residential'&&step===4);
+    next.textContent=isResReview?'Calculate →':'Next →';
+  }
 }
 
-function returnToSegmentChooser() {
-  state.segment = null;
-  updateCalculatorHeading(null);
-  showResidentialFlow(false);
-  showBranchStep(true);
-  document.querySelectorAll('.segment-card').forEach(b => b.setAttribute('aria-pressed', 'false'));
-  safeScrollTop();
+/* ── Navigation ─────────────────────────────────────────── */
+function goNext(){
+  if(!validate()) return;
+  const seg=state.segment;
+
+  // Pre-render before advancing
+  if(seg==='residential'){
+    if(state.step===2){ applyResDefaults(); renderAppliancePanel(); updateRunningTotal(); }
+    if(state.step===3) renderReview();
+    if(state.step===4) renderResResults();
+  }
+  if(seg==='commercial' && state.step===3) renderCommercialResults();
+  if(seg==='industrial' && state.step===3) renderIndustrialResults();
+
+  state.step++;
+  showTrackStep(seg, state.step);
+  safeScroll();
 }
 
-/* ── Nav / flow ───────────────────────────────────────────── */
-function validateStep(step) {
-  if (step === 0 && !state.coverage) {
-    showToast('Please choose your coverage level.');
-    return false;
+function goBack(){
+  if(state.step<=1){
+    // Return to branch screen
+    state.segment=null; state.step=0;
+    document.querySelectorAll('.segment-card').forEach(b=>b.setAttribute('aria-pressed','false'));
+    showBranchScreen();
+  } else {
+    state.step--;
+    showTrackStep(state.segment, state.step);
   }
-  if (step === 1 && !state.fuel) {
-    showToast('Please choose your primary heating system.');
-    return false;
+  safeScroll();
+}
+
+function restart(){
+  state.segment=null; state.step=0;
+  state.r={coverage:null,fuel:null,selected:{},custom:[],activeTab:'essential'};
+  state.c={buildingType:'',sqft:'',tenants:'',existing:'',criticalSystems:[],coverageScope:null,tolerance:'',runtime:''};
+  state.i={industry:'',facilitySize:'',demand:'',shifts:'',criticalLoads:[],downtimeCost:null,transfer:'',redundancy:''};
+  customCounter=0;
+
+  document.querySelectorAll('[aria-pressed]').forEach(b=>b.setAttribute('aria-pressed','false'));
+  document.querySelectorAll('.form-select').forEach(s=>{s.selectedIndex=0;});
+  document.querySelectorAll('.tab-btn').forEach((b,i)=>{b.classList.toggle('active',i===0);b.setAttribute('aria-selected',String(i===0));});
+  document.getElementById('i-confirm').style.display='none';
+  document.getElementById('i-lead-form').style.display='';
+
+  showBranchScreen();
+}
+
+/* ── Validation ─────────────────────────────────────────── */
+function validate(){
+  const seg=state.segment, step=state.step;
+  if(seg==='residential'){
+    if(step===1&&!state.r.coverage){ showToast('Please choose a coverage level.'); return false; }
+    if(step===2&&!state.r.fuel){ showToast('Please choose your heating type.'); return false; }
+    if(step===3&&Object.keys(state.r.selected).length===0){ showToast('Please select at least one appliance.'); return false; }
   }
-  if (step === 2) {
-    applyDefaults();
-    if (Object.keys(state.selected).length === 0) {
-      showToast('Please select at least one appliance.');
-      return false;
-    }
+  if(seg==='commercial'){
+    if(step===1&&!state.c.buildingType){ showToast('Please select a building type.'); return false; }
+    if(step===2&&state.c.criticalSystems.length===0){ showToast('Please select at least one critical system.'); return false; }
+    if(step===3&&!state.c.coverageScope){ showToast('Please select a coverage scope.'); return false; }
   }
-  if (step === 3 && Object.keys(state.selected).length === 0) {
-    showToast('Please add at least one appliance before calculating.');
-    return false;
+  if(seg==='industrial'){
+    if(step===1&&!state.i.industry){ showToast('Please select your industry type.'); return false; }
+    if(step===2&&state.i.criticalLoads.length===0){ showToast('Please select at least one critical load.'); return false; }
+    if(step===3&&!state.i.downtimeCost){ showToast('Please select a downtime cost range.'); return false; }
   }
   return true;
 }
 
-function restart() {
-  state.step = 0;
-  state.coverage = null;
-  state.fuel = null;
-  state.selected = {};
-  state.custom = [];
-  state.activeTab = 'essential';
-  customCounter = 0;
-
-  document.querySelectorAll('.coverage-card').forEach(btn => {
-    if (!btn.classList.contains('segment-card')) btn.setAttribute('aria-pressed', 'false');
-  });
-  document.querySelectorAll('.fuel-card').forEach(btn => btn.setAttribute('aria-pressed', 'false'));
-  document.querySelectorAll('.tab-btn').forEach((btn, i) => {
-    const active = i === 0;
-    btn.classList.toggle('active', active);
-    btn.setAttribute('aria-selected', String(active));
-  });
-
-  renderAppliancePanel();
-  renderReview();
-  updateRunningTotalBar();
-  showStep(0);
-  updateProgressBar();
+/* ── Residential logic ──────────────────────────────────── */
+function applyResDefaults(){
+  const defaults=DEFAULTS[state.r.coverage]||DEFAULTS.essential;
+  defaults.forEach(id=>{ if(!state.r.selected[id]) state.r.selected[id]={qty:1}; });
+  if(state.r.fuel){ const fid=FUEL_MAP[state.r.fuel]; if(fid&&!state.r.selected[fid]) state.r.selected[fid]={qty:1}; }
 }
 
-function initNav() {
-  const back = document.getElementById('btn-back');
-  const next = document.getElementById('btn-next');
-  const restartBtn = document.getElementById('btn-restart');
-
-  if (back) {
-    back.addEventListener('click', () => {
-      if (state.step === 0) {
-        returnToSegmentChooser();
-        return;
-      }
-      state.step -= 1;
-      showStep(state.step);
-      updateProgressBar();
-
-      if (state.step === 2) renderAppliancePanel();
-      if (state.step === 3) renderReview();
-      if (state.step === 4) renderResults();
-
-      safeScrollTop();
-    });
-  }
-
-  if (next) {
-    next.addEventListener('click', () => {
-      if (!validateStep(state.step)) return;
-
-      if (state.step < 4) state.step += 1;
-
-      if (state.step === 2) {
-        applyDefaults();
-        renderAppliancePanel();
-      } else if (state.step === 3) {
-        renderReview();
-      } else if (state.step === 4) {
-        renderResults();
-      }
-
-      showStep(state.step);
-      updateProgressBar();
-      safeScrollTop();
-    });
-  }
-
-  if (restartBtn) {
-    restartBtn.addEventListener('click', () => {
-      restart();
-      returnToSegmentChooser();
-    });
-  }
+function calcTotals(){
+  let running=0,highestSurge=0;
+  Object.entries(state.r.selected).forEach(([id,{qty}])=>{
+    const a=getAllAppliances().find(x=>x.id===id); if(!a) return;
+    running+=a.running*qty;
+    const s=(a.surge||a.running)*qty; if(s>highestSurge) highestSurge=s;
+  });
+  const peak=running+highestSurge, recommended=roundUp500(peak*1.25);
+  return{running,peak,recommended,rangeMin:roundUp500(recommended*0.88),rangeMax:recommended};
 }
 
-/* ── Init ─────────────────────────────────────────────────── */
-document.addEventListener('DOMContentLoaded', () => {
-  initBranching();
-  initStep0();
-  initStep1();
-  initStep2();
-  initNav();
-
-  const reviewTable = document.getElementById('review-tbody');
-  if (reviewTable) {
-    reviewTable.addEventListener('click', handleReviewTableClick);
+function renderAppliancePanel(){
+  const panel=document.getElementById('appliance-panel');
+  const cf=document.getElementById('custom-form');
+  const tab=state.r.activeTab;
+  if(tab==='custom'){
+    panel.innerHTML=''; cf.style.display='';
+    if(state.r.custom.length>0){ panel.style.display='grid'; state.r.custom.forEach(a=>panel.appendChild(buildAppCard(a))); }
+    else panel.style.display='none';
+    return;
   }
+  cf.style.display='none'; panel.style.display='grid'; panel.innerHTML='';
+  getAllAppliances().filter(a=>a.tab===tab).forEach(a=>panel.appendChild(buildAppCard(a)));
+}
 
-  showBranchStep(true);
-  showResidentialFlow(false);
-  updateCalculatorHeading(null);
-  restart();
+function buildAppCard(a){
+  const sel=!!state.r.selected[a.id];
+  const card=document.createElement('button');
+  card.type='button';
+  card.className='app-card'+(sel?' selected':'');
+  card.setAttribute('aria-pressed',String(sel));
+  card.innerHTML=`<span class="app-check"></span><span class="app-info"><span class="app-name">${a.name}</span><span class="app-watts">${fmt(a.running)} running${a.surge&&a.surge!==a.running?` · ${fmt(a.surge)} surge`:''}</span></span>`;
+  card.addEventListener('click',()=>{
+    if(state.r.selected[a.id]) delete state.r.selected[a.id];
+    else state.r.selected[a.id]={qty:1};
+    renderAppliancePanel(); updateRunningTotal();
+  });
+  return card;
+}
+
+function updateRunningTotal(){
+  const{running,peak}=calcTotals();
+  document.getElementById('rt-running').textContent=fmt(running);
+  document.getElementById('rt-surge').textContent=fmt(peak);
+}
+
+function renderReview(){
+  const tbody=document.getElementById('review-tbody');
+  const empty=document.getElementById('review-empty');
+  const wrap=document.getElementById('review-table-wrap');
+  const ids=Object.keys(state.r.selected);
+  if(ids.length===0){ empty.style.display=''; wrap.style.display='none'; return; }
+  empty.style.display='none'; wrap.style.display=''; tbody.innerHTML='';
+  ids.forEach(id=>{
+    const a=getAllAppliances().find(x=>x.id===id); if(!a) return;
+    const qty=state.r.selected[id].qty;
+    const tr=document.createElement('tr'); tr.dataset.id=id;
+    tr.innerHTML=`<td>${a.name}</td><td><div class="qty-ctrl"><button class="qty-btn" data-action="dec">−</button><span class="qty-num">${qty}</span><button class="qty-btn" data-action="inc">+</button></div></td><td>${fmt(a.running*qty)}</td><td>${fmt((a.surge||a.running)*qty)}</td><td class="col-remove"><button class="remove-btn" data-action="remove">✕</button></td>`;
+    tbody.appendChild(tr);
+  });
+  const t=calcTotals();
+  document.getElementById('review-total-running').textContent=fmt(t.running);
+  document.getElementById('review-total-surge').textContent=fmt(t.peak);
+  tbody.addEventListener('click',handleReviewClick);
+}
+
+function handleReviewClick(e){
+  const btn=e.target.closest('button[data-action]'); if(!btn) return;
+  const tr=btn.closest('tr[data-id]'); if(!tr) return;
+  const id=tr.dataset.id; const action=btn.dataset.action;
+  if(!state.r.selected[id]) return;
+  if(action==='inc') state.r.selected[id].qty+=1;
+  else if(action==='dec') state.r.selected[id].qty=Math.max(1,state.r.selected[id].qty-1);
+  else if(action==='remove'){ delete state.r.selected[id]; state.r.custom=state.r.custom.filter(c=>c.id!==id); }
+  renderReview(); updateRunningTotal();
+}
+
+function renderResResults(){
+  const{running,peak,rangeMin,rangeMax}=calcTotals();
+  document.getElementById('res-running').textContent=fmt(running);
+  document.getElementById('res-peak').textContent=fmt(peak);
+
+  let tone,heading,blurb;
+  if(rangeMax<10000){tone='green';heading='Compact Standby or Heavy Portable';blurb='Ideal for essential backup loads and selective circuits.';}
+  else if(rangeMax<24000){tone='amber';heading='Mid-Range Standby Generator';blurb='Great for larger homes or whole-house backup requirements.';}
+  else{tone='red';heading='High-Capacity Standby Generator';blurb='Best for whole-home coverage with high-demand appliances.';}
+
+  const rc=document.getElementById('rec-card');
+  rc.className=`rec-card ${tone}`;
+  rc.innerHTML=`<div class="rec-body"><h3>${heading}</h3><span class="rec-size">${fmt(rangeMin)} – ${fmt(rangeMax)}</span><p>${blurb} Includes a 25% safety buffer — the industry standard.</p></div>`;
+
+  const typeText=rangeMax<12000?'A portable or entry-level standby may work depending on your transfer switch setup.':rangeMax<24000?'A whole-home standby generator with automatic transfer switch is typically recommended.':'A commercial/industrial-grade standby solution and professional load analysis is strongly recommended.';
+  document.getElementById('generator-type-block').innerHTML=`<strong>Generator type guidance</strong>${typeText}`;
+
+  const tips=['Confirm starting loads with manufacturer nameplate ratings.','Plan for future expansion and seasonal load changes.','Consult a licensed electrician for transfer switch and code compliance.','Separate essential vs convenience loads to optimize generator size.','Account for HVAC startup surges in summer/winter peak conditions.'];
+  document.getElementById('tips-list').innerHTML=tips.map(t=>`<li>${t}</li>`).join('');
+}
+
+/* ── Commercial logic ───────────────────────────────────── */
+function renderCommercialResults(){
+  const c=state.c;
+  const n=c.criticalSystems.length;
+  const bigBuilding=c.sqft==='50k-100k'||c.sqft==='over100k';
+  const fullCoverage=c.coverageScope==='full'||c.coverageScope==='multi';
+  const hasMedical=c.criticalSystems.includes('medical_eq');
+  const hasElevators=c.criticalSystems.includes('elevators');
+  const zeroTolerance=c.tolerance==='zero';
+
+  let sizeRange,heading;
+  if(bigBuilding||c.coverageScope==='multi'){ sizeRange='200 – 500+ kW'; heading='Enterprise Standby System'; }
+  else if(fullCoverage||n>=6){ sizeRange='75 – 250 kW'; heading='Full-Coverage Standby System'; }
+  else if(n>=3||hasMedical){ sizeRange='30 – 100 kW'; heading='Critical Systems Standby'; }
+  else{ sizeRange='20 – 60 kW'; heading='Essential Systems Standby'; }
+
+  document.getElementById('c-rec-card').innerHTML=`<div class="rec-body"><h3>${heading}</h3><span class="rec-size">${sizeRange}</span><p>Preliminary range based on your building profile. A load study will confirm exact sizing.</p></div>`;
+
+  const notes=[];
+  if(zeroTolerance) notes.push('Zero-tolerance uptime requires an Automatic Transfer Switch (ATS) with sub-10-second switchover, plus UPS for any IT or life-safety loads.');
+  if(hasMedical) notes.push('Medical equipment requires clean, stable power — specify low total harmonic distortion (&lt;5%) and consider a UPS in series with the generator.');
+  if(hasElevators) notes.push('Elevators have high surge demands at startup. Your generator must be sized for motor starting kVA, not just running load.');
+  if(c.runtime==='extended') notes.push('Extended runtime means planning for fuel logistics — a large on-site tank or a standing fuel delivery contract.');
+  if(c.coverageScope==='multi') notes.push('Multi-property coverage benefits from remote monitoring and centralized maintenance contracts rather than individual unit management.');
+  notes.push('All commercial installations require a licensed electrician and local permit. Transfer switch requirements vary by jurisdiction.');
+
+  document.getElementById('c-considerations-block').innerHTML=`<div class="tips-block"><h3>Key considerations</h3><ul class="tips-list">${notes.map(n=>`<li>${n}</li>`).join('')}</ul></div>`;
+  document.getElementById('c-sizing-note').innerHTML=`<div class="assessment-block"><h4>Why this is a range, not a number</h4>Commercial sizing depends on actual measured demand — not square footage alone. Tenant load profiles, motor starting calculations, and code requirements all affect the final spec. A load study typically takes 1–2 days and is the only reliable path to right-sizing.</div>`;
+}
+
+/* ── Industrial logic ───────────────────────────────────── */
+function renderIndustrialResults(){
+  const i=state.i;
+  const highCost=i.downtimeCost==='50k-250k'||i.downtimeCost==='over250k';
+  const largeFacility=i.facilitySize==='200k-500k'||i.facilitySize==='over500k';
+  const continuous=i.shifts==='247';
+  const needsRedundancy=i.redundancy==='n+1'||i.redundancy==='2n'||highCost||continuous;
+  const hasMotors=i.criticalLoads.includes('motors');
+
+  let sizeRange,heading,tone;
+  if(largeFacility||i.demand==='over1000'){sizeRange='1 MW – 2+ MW';heading='Large Industrial System';tone='red';}
+  else if(i.demand==='500-1000'||needsRedundancy){sizeRange='500 kW – 1.5 MW';heading='Heavy Industrial System';tone='amber';}
+  else if(i.demand==='100-500'||highCost){sizeRange='100 – 600 kW';heading='Mid-Scale Industrial System';tone='amber';}
+  else{sizeRange='50 – 200 kW';heading='Essential Industrial Backup';tone='green';}
+
+  const rc=document.getElementById('i-rec-card');
+  rc.className=`rec-card ${tone}`;
+  rc.innerHTML=`<div class="rec-body"><h3>${heading}</h3><span class="rec-size">${sizeRange}</span><p>Preliminary range based on your inputs. Industrial sizing requires a certified load study — this is the starting point for the conversation with our team.</p></div>`;
+
+  const flags=[];
+  if(hasMotors) flags.push('Large motors require careful surge/starting kVA calculations. Motor starting loads can be 3–7× running load and must be accounted for in generator sizing.');
+  if(continuous) flags.push('24/7 operations mean downtime is never convenient — a redundant (N+1 or 2N) configuration is strongly recommended to allow maintenance without production impact.');
+  if(i.transfer==='seamless') flags.push('Seamless transfer requires a UPS or flywheel energy storage bridging the gap between utility loss and generator startup. A generator alone cannot achieve zero-interruption transfer.');
+  if(i.redundancy==='2n') flags.push('2N redundancy means two complete generator systems, either of which can carry full load. This is typical for mission-critical or Tier 3+ infrastructure.');
+  if(highCost) flags.push('At your downtime cost level, the ROI on proper generator infrastructure is typically realized within one to three prevented outage events.');
+  flags.push('Industrial installations require coordination with your utility, local AHJ, and may require environmental permitting depending on fuel type and emissions rating.');
+
+  document.getElementById('i-flags-block').innerHTML=`<div class="tips-block" style="margin-top:4px"><h3>Engineering considerations</h3><ul class="tips-list">${flags.map(f=>`<li>${f}</li>`).join('')}</ul></div>`;
+
+  const industryNames={manufacturing:'Manufacturing / Assembly',food:'Food Processing / Cold Storage',chemical:'Chemical / Pharmaceutical',mining:'Mining / Extraction',agriculture:'Agriculture / Greenhouse',construction:'Construction / Job Site',telecom:'Telecom / Broadcast',water:'Water / Wastewater',other:'Other'};
+  const demandNames={'under100':'Under 100 kW','100-500':'100 – 500 kW','500-1000':'500 kW – 1 MW','over1000':'Over 1 MW','unknown':'Unknown'};
+  const shiftNames={single:'Single shift',double:'Double shift','247':'24/7 operations',seasonal:'Seasonal / variable'};
+  document.getElementById('i-lead-summary').innerHTML=`<div class="lead-summary"><h4>Your assessment summary</h4><div class="lead-summary-grid"><div class="lead-summary-item"><span>Industry</span><strong>${industryNames[i.industry]||'—'}</strong></div><div class="lead-summary-item"><span>Estimated demand</span><strong>${demandNames[i.demand]||'—'}</strong></div><div class="lead-summary-item"><span>Operations</span><strong>${shiftNames[i.shifts]||'—'}</strong></div><div class="lead-summary-item"><span>Preliminary range</span><strong>${sizeRange}</strong></div></div></div>`;
+}
+
+/* ── Init: Branch screen ───────────────────────────────── */
+function initBranchScreen(){
+  document.querySelectorAll('.segment-card').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      const seg=btn.dataset.segment;
+      state.segment=seg; state.step=1;
+      document.querySelectorAll('.segment-card').forEach(b=>b.setAttribute('aria-pressed',String(b===btn)));
+      enterTrack(seg);
+      showTrackStep(seg,1);
+      safeScroll();
+    });
+  });
+}
+
+/* ── Init: Residential ─────────────────────────────────── */
+function initResidential(){
+  // Coverage
+  document.querySelectorAll('#r-1 .coverage-card').forEach(btn=>btn.addEventListener('click',()=>{
+    state.r.coverage=btn.dataset.value;
+    document.querySelectorAll('#r-1 .coverage-card').forEach(b=>b.setAttribute('aria-pressed','false'));
+    btn.setAttribute('aria-pressed','true');
+  }));
+  // Fuel
+  document.querySelectorAll('#r-2 .fuel-card').forEach(btn=>btn.addEventListener('click',()=>{
+    state.r.fuel=btn.dataset.value;
+    document.querySelectorAll('#r-2 .fuel-card').forEach(b=>b.setAttribute('aria-pressed','false'));
+    btn.setAttribute('aria-pressed','true');
+  }));
+  // Tabs
+  document.querySelectorAll('.tab-btn').forEach(btn=>btn.addEventListener('click',()=>{
+    state.r.activeTab=btn.dataset.tab;
+    document.querySelectorAll('.tab-btn').forEach(b=>{b.classList.toggle('active',b===btn);b.setAttribute('aria-selected',String(b===btn));});
+    renderAppliancePanel();
+  }));
+  // Custom appliance
+  document.getElementById('add-custom-btn').addEventListener('click',()=>{
+    const name=document.getElementById('custom-name').value.trim();
+    const running=parseInt(document.getElementById('custom-running').value);
+    const surge=parseInt(document.getElementById('custom-surge').value)||running;
+    if(!name) return showToast('Please enter an appliance name.');
+    if(!running||running<1) return showToast('Please enter valid running watts.');
+    const id='custom_'+(++customCounter);
+    state.r.custom.push({id,name,icon:'🛠️',running,surge:surge>=running?surge:running,tab:'custom'});
+    state.r.selected[id]={qty:1};
+    document.getElementById('custom-name').value='';
+    document.getElementById('custom-running').value='';
+    document.getElementById('custom-surge').value='';
+    renderAppliancePanel(); updateRunningTotal();
+    showToast('Custom appliance added.');
+  });
+  // Review table
+  document.getElementById('review-tbody').addEventListener('click',handleReviewClick);
+  // Restart
+  document.getElementById('r-restart').addEventListener('click',restart);
+}
+
+/* ── Init: Commercial ──────────────────────────────────── */
+function initCommercial(){
+  // Selects
+  [['c-building-type','buildingType'],['c-sqft','sqft'],['c-tenants','tenants'],['c-existing','existing'],['c-tolerance','tolerance'],['c-runtime','runtime']].forEach(([id,key])=>{
+    const el=document.getElementById(id);
+    if(el) el.addEventListener('change',()=>{ state.c[key]=el.value; });
+  });
+  // Critical systems multi-select
+  document.querySelectorAll('#c-critical-systems .option-card').forEach(btn=>btn.addEventListener('click',()=>{
+    const v=btn.dataset.value;
+    const on=btn.getAttribute('aria-pressed')!=='true';
+    btn.setAttribute('aria-pressed',String(on));
+    if(on) state.c.criticalSystems.push(v);
+    else state.c.criticalSystems=state.c.criticalSystems.filter(x=>x!==v);
+  }));
+  // Coverage scope single-select
+  document.querySelectorAll('#c-coverage-scope .option-card').forEach(btn=>btn.addEventListener('click',()=>{
+    state.c.coverageScope=btn.dataset.value;
+    document.querySelectorAll('#c-coverage-scope .option-card').forEach(b=>b.setAttribute('aria-pressed','false'));
+    btn.setAttribute('aria-pressed','true');
+  }));
+  document.getElementById('c-restart').addEventListener('click',restart);
+}
+
+/* ── Init: Industrial ──────────────────────────────────── */
+function initIndustrial(){
+  // Selects
+  [['i-industry','industry'],['i-facility-size','facilitySize'],['i-demand','demand'],['i-shifts','shifts'],['i-transfer','transfer'],['i-redundancy','redundancy']].forEach(([id,key])=>{
+    const el=document.getElementById(id);
+    if(el) el.addEventListener('change',()=>{ state.i[key]=el.value; });
+  });
+  // Critical loads multi-select
+  document.querySelectorAll('#i-critical-loads .option-card').forEach(btn=>btn.addEventListener('click',()=>{
+    const v=btn.dataset.value;
+    const on=btn.getAttribute('aria-pressed')!=='true';
+    btn.setAttribute('aria-pressed',String(on));
+    if(on) state.i.criticalLoads.push(v);
+    else state.i.criticalLoads=state.i.criticalLoads.filter(x=>x!==v);
+  }));
+  // Downtime cost single-select
+  document.querySelectorAll('#i-downtime-cost .option-card').forEach(btn=>btn.addEventListener('click',()=>{
+    state.i.downtimeCost=btn.dataset.value;
+    document.querySelectorAll('#i-downtime-cost .option-card').forEach(b=>b.setAttribute('aria-pressed','false'));
+    btn.setAttribute('aria-pressed','true');
+  }));
+  // Lead form submit
+  document.getElementById('i-submit-btn').addEventListener('click',()=>{
+    const name=document.getElementById('i-name').value.trim();
+    const email=document.getElementById('i-email').value.trim();
+    if(!name||!email){ showToast('Please enter your name and email address.'); return; }
+    document.getElementById('i-lead-form').style.display='none';
+    document.getElementById('i-confirm').style.display='flex';
+  });
+  document.getElementById('i-restart').addEventListener('click',restart);
+}
+
+/* ── Jump to step via clickable step labels ─────────────── */
+function goToStep(targetStep) {
+  if (!state.segment) return;
+  if (targetStep >= state.step) return; // only go back to already-visited steps
+  state.step = targetStep;
+  showTrackStep(state.segment, state.step);
+  safeScroll();
+}
+
+/* ── Boot ───────────────────────────────────────────────── */
+document.addEventListener('DOMContentLoaded',()=>{
+  initBranchScreen();
+  initResidential();
+  initCommercial();
+  initIndustrial();
+
+  document.getElementById('btn-next').addEventListener('click',goNext);
+  document.getElementById('btn-back').addEventListener('click',goBack);
+
+  showBranchScreen();
 });
