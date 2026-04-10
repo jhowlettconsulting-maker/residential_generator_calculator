@@ -22,10 +22,10 @@
   --ease:0.18s ease;
   --font:'Helvetica Neue','Helvetica',Arial,sans-serif;
 }
-html{font-size:16px}body{font-family:var(--font);background:transparent;color:var(--text);line-height:1.55;min-height:100vh;display:flex;align-items:flex-start;justify-content:center;padding:32px 16px 64px;font-size:16px}
-.calc-wrapper{width:100%;max-width:880px;background:#ffffff;border-radius:18px;box-shadow:0 10px 30px rgba(0,0,0,0.08);border:1px solid var(--border);overflow:hidden;display:flex;flex-direction:column}
+html{font-size:16px}body{font-family:var(--font);background:transparent;color:var(--text);line-height:1.55;min-height:0;display:flex;align-items:flex-start;justify-content:center;padding:32px 16px 64px;font-size:16px}
+.calc-wrapper{width:100%;max-width:880px;background:#ffffff;border-radius:18px;box-shadow:0 10px 30px rgba(0,0,0,0.08);border:1px solid var(--border);overflow:visible;display:flex;flex-direction:column}
 .calc-header{background:#333333;color:#fff;padding:40px 44px 32px;text-align:left}
-.calc-header h1{font-size:1.85rem;font-weight:800;letter-spacing:-.4px;margin-bottom:8px}
+.calc-header h1{font-size:1.85rem;font-weight:400;letter-spacing:0.01em;margin-bottom:8px}
 .calc-header p{font-size:1.0625rem;opacity:.86;max-width:none;white-space:nowrap;margin:0}
 
 .calc-header-icon,.coverage-icon,.fuel-icon,.app-icon,.rec-emoji,.empty-icon,.opt-icon{display:none !important}
@@ -49,7 +49,7 @@ html{font-size:16px}body{font-family:var(--font);background:transparent;color:va
 .segment-card:hover{border-color:#BFBFBF;box-shadow:var(--shadow-md);transform:translateY(-2px)}
 .segment-card[aria-pressed="true"]{border-color:var(--brand);box-shadow:0 0 0 3px rgba(182,218,46,.35)}
 .seg-body{flex:1;padding:22px 20px 14px;display:flex;flex-direction:column;gap:6px}
-.seg-title{font-size:1.2375rem;font-weight:700;color:var(--text);font-family:"Helvetica Neue","Helvetica",Arial,sans-serif}
+.seg-title{font-size:1.2375rem;font-weight:400;letter-spacing:0.01em;color:var(--text);font-family:"Helvetica Neue","Helvetica",Arial,sans-serif}
 .seg-desc{font-size:0.9375rem;color:var(--text-2);line-height:1.4}
 .seg-footer{padding:10px 20px 14px;border-top:1px solid var(--border);background:var(--brand-light);display:flex;align-items:center;justify-content:space-between}
 .seg-range{font-size:1rem;font-weight:700;color:#444}
@@ -60,7 +60,7 @@ html{font-size:16px}body{font-family:var(--font);background:transparent;color:va
 .step.active{display:block}
 @keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
 .step-intro{margin-bottom:28px}
-.step-intro h2{font-size:1.425rem;font-weight:700;margin-bottom:6px;font-family:"Helvetica Neue","Helvetica",Arial,sans-serif;letter-spacing:-.2px}
+.step-intro h2{font-size:1.425rem;font-weight:400;margin-bottom:6px;font-family:"Helvetica Neue","Helvetica",Arial,sans-serif;letter-spacing:0.01em}
 .step-intro p{font-size:1.0625rem;color:var(--text-2)}
 
 .coverage-cards{display:grid;grid-template-columns:1fr 1fr;gap:16px}
@@ -1004,8 +1004,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
   /* Belt-and-suspenders fallbacks */
   reportHeight();
-  setTimeout(reportHeight, 400);
-  setTimeout(reportHeight, 1000);
+  setTimeout(reportHeight, 200);
+  setTimeout(reportHeight, 600);
+  setTimeout(reportHeight, 1200);
+  setTimeout(reportHeight, 2500);
   window.addEventListener('resize', reportHeight);
 });
 </script>
