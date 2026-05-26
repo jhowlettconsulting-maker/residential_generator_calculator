@@ -1,0 +1,1363 @@
+<!--
+  ================================================================
+  ONTIVITY POWER — Residential Generator Calculator
+  PASTE THIS ENTIRE FILE into Wix > Add Element > Embed Code > Code
+  No hosting, no iframe src URL needed — paste and go.
+  ================================================================
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Residential Generator Power Calculator | Ontivity Power</title>
+  <style>
+/* ============================================================
+   Ontivity Power — Residential Generator Calculator
+   Self-contained embed styles. No external dependencies.
+   ============================================================ */
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --brand:        #F5820A;
+  --brand-dark:   #D96E05;
+  --brand-light:  #FFF4E6;
+  --navy:         #1A2332;
+  --navy-mid:     #253447;
+  --text:         #1A2332;
+  --text-2:       #4A5A6A;
+  --text-3:       #8A9BAB;
+  --bg:           #F7F9FC;
+  --bg-card:      #FFFFFF;
+  --border:       #DDE3EC;
+  --border-focus: #F5820A;
+  --green:        #16A34A;
+  --green-bg:     #DCFCE7;
+  --amber:        #D97706;
+  --amber-bg:     #FEF3C7;
+  --red:          #DC2626;
+  --red-bg:       #FEE2E2;
+  --r-sm:  6px;
+  --r-md:  10px;
+  --r-lg:  16px;
+  --r-xl:  20px;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.07);
+  --shadow-md: 0 4px 16px rgba(0,0,0,0.09);
+  --shadow-lg: 0 8px 32px rgba(0,0,0,0.12);
+  --ease: 0.18s ease;
+  --font: 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+/* Wix embed: transparent bg, no full-height requirement */
+body {
+  font-family: var(--font);
+  background: transparent;
+  color: var(--text);
+  line-height: 1.55;
+  padding: 16px 8px 32px;
+}
+
+/* ── Wrapper ── */
+.calc-wrapper {
+  width: 100%;
+  max-width: 880px;
+  margin: 0 auto;
+  background: var(--bg-card);
+  border-radius: var(--r-xl);
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Header ── */
+.calc-header {
+  background: linear-gradient(135deg, var(--navy) 0%, var(--navy-mid) 100%);
+  color: #fff;
+  padding: 40px 44px 32px;
+  text-align: center;
+}
+.calc-header-icon {
+  font-size: 2.6rem;
+  display: block;
+  margin-bottom: 10px;
+  filter: drop-shadow(0 0 14px rgba(245,130,10,.65));
+}
+.calc-header h1 {
+  font-size: 1.85rem;
+  font-weight: 800;
+  letter-spacing: -.4px;
+  margin-bottom: 8px;
+}
+.calc-header p {
+  font-size: 0.95rem;
+  opacity: .78;
+  max-width: 540px;
+  margin: 0 auto;
+}
+
+/* ── Progress bar ── */
+.progress-bar {
+  height: 4px;
+  background: var(--border);
+}
+.progress-fill {
+  height: 100%;
+  background: var(--brand);
+  transition: width 0.35s ease;
+  width: 0%;
+}
+
+/* ── Step labels ── */
+.step-labels {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 44px 0;
+  background: var(--bg-card);
+}
+.step-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+  color: var(--text-3);
+  transition: color var(--ease);
+  cursor: default;
+  flex: 1;
+  text-align: center;
+}
+.step-label.active { color: var(--brand); }
+.step-label.done   { color: var(--green); }
+
+/* ── Steps ── */
+.step {
+  display: none;
+  padding: 36px 44px 20px;
+  animation: fadeUp .22s ease;
+}
+.step.active { display: block; }
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.step-intro { margin-bottom: 28px; }
+.step-intro h2 {
+  font-size: 1.3rem;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+.step-intro p {
+  font-size: 0.9rem;
+  color: var(--text-2);
+}
+
+/* ── Coverage cards (Step 0) ── */
+.coverage-cards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+.coverage-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 22px 20px;
+  border: 2px solid var(--border);
+  border-radius: var(--r-lg);
+  background: var(--bg-card);
+  cursor: pointer;
+  text-align: left;
+  font-family: var(--font);
+  transition: all var(--ease);
+}
+.coverage-card:hover {
+  border-color: var(--brand);
+  box-shadow: var(--shadow-sm);
+  transform: translateY(-2px);
+}
+.coverage-card[aria-pressed="true"] {
+  border-color: var(--brand);
+  background: var(--brand-light);
+  box-shadow: 0 0 0 3px rgba(245,130,10,.18);
+}
+.coverage-icon { font-size: 2rem; flex-shrink: 0; line-height: 1; margin-top: 2px; }
+.coverage-info { display: flex; flex-direction: column; gap: 5px; }
+.coverage-info strong { font-size: 1.05rem; font-weight: 700; color: var(--text); }
+.coverage-sub  { font-size: 0.85rem; color: var(--text-2); line-height: 1.4; }
+.coverage-range { font-size: 0.78rem; font-weight: 600; color: var(--brand); margin-top: 2px; }
+
+/* ── Fuel cards (Step 1) ── */
+.fuel-cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+}
+.fuel-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 7px;
+  padding: 20px 12px 16px;
+  border: 2px solid var(--border);
+  border-radius: var(--r-lg);
+  background: var(--bg-card);
+  cursor: pointer;
+  font-family: var(--font);
+  transition: all var(--ease);
+  text-align: center;
+}
+.fuel-card:hover {
+  border-color: var(--brand);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-sm);
+}
+.fuel-card[aria-pressed="true"] {
+  border-color: var(--brand);
+  background: var(--brand-light);
+  box-shadow: 0 0 0 3px rgba(245,130,10,.18);
+}
+.fuel-icon  { font-size: 1.8rem; line-height: 1; }
+.fuel-label { font-size: 0.875rem; font-weight: 600; color: var(--text); }
+.fuel-note  { font-size: 0.75rem; color: var(--text-3); }
+
+/* ── Tab bar (Step 2) ── */
+.tab-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+.tab-btn {
+  padding: 7px 15px;
+  border: 1.5px solid var(--border);
+  border-radius: 20px;
+  background: var(--bg-card);
+  color: var(--text-2);
+  font-size: 0.83rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--ease);
+  font-family: var(--font);
+}
+.tab-btn:hover { border-color: var(--brand); color: var(--brand); }
+.tab-btn.active {
+  background: var(--brand);
+  border-color: var(--brand);
+  color: #fff;
+}
+
+/* ── Appliance panel ── */
+.appliance-panel {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px;
+  margin-bottom: 20px;
+  min-height: 140px;
+}
+
+/* ── Appliance card ── */
+.app-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+  padding: 13px 14px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--bg-card);
+  cursor: pointer;
+  transition: all var(--ease);
+  user-select: none;
+}
+.app-card:hover {
+  border-color: var(--brand);
+  box-shadow: var(--shadow-sm);
+  transform: translateY(-1px);
+}
+.app-card.selected {
+  border-color: var(--brand);
+  background: var(--brand-light);
+  box-shadow: 0 0 0 2px rgba(245,130,10,.14);
+}
+.app-check {
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--border);
+  border-radius: 4px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--ease);
+  margin-top: 1px;
+}
+.app-card.selected .app-check {
+  background: var(--brand);
+  border-color: var(--brand);
+}
+.app-card.selected .app-check::after {
+  content: '✓';
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+.app-icon { font-size: 1.25rem; flex-shrink: 0; }
+.app-info  { flex: 1; min-width: 0; }
+.app-name  {
+  font-size: 0.845rem;
+  font-weight: 600;
+  color: var(--text);
+  line-height: 1.3;
+  margin-bottom: 3px;
+}
+.app-watts { font-size: 0.75rem; color: var(--text-3); line-height: 1.4; }
+
+/* ── Custom form ── */
+.custom-form {
+  border: 1.5px dashed var(--border);
+  border-radius: var(--r-md);
+  padding: 20px;
+  margin-bottom: 20px;
+}
+.custom-form h3 { font-size: 0.9rem; font-weight: 600; color: var(--text-2); margin-bottom: 14px; }
+.custom-fields  { display: flex; flex-direction: column; gap: 12px; }
+.custom-fields input[type="text"],
+.custom-fields input[type="number"] {
+  width: 100%;
+  padding: 9px 12px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--r-sm);
+  font-size: 0.875rem;
+  font-family: var(--font);
+  color: var(--text);
+  background: var(--bg-card);
+  transition: border-color var(--ease);
+}
+.custom-fields input:focus { outline: none; border-color: var(--border-focus); }
+.custom-watts-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.custom-watts-row label {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--text-2);
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.optional { font-weight: 400; color: var(--text-3); font-size: 0.75rem; }
+
+/* ── Running total bar ── */
+.running-total-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  font-size: 0.83rem;
+}
+.rt-label  { color: var(--text-2); margin-right: 2px; }
+.rt-value  { font-weight: 700; color: var(--brand); font-size: 0.9rem; }
+.rt-surge  { color: var(--amber); }
+.rt-sep    { color: var(--text-3); font-size: 0.75rem; }
+
+/* ── Review table (Step 3) ── */
+.review-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+.review-table th {
+  text-align: left;
+  padding: 9px 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+  color: var(--text-3);
+  border-bottom: 2px solid var(--border);
+}
+.review-table td {
+  padding: 11px 12px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+}
+.review-table tbody tr:hover { background: var(--bg); }
+.col-qty    { width: 100px; }
+.col-watts  { width: 110px; }
+.col-remove { width: 44px; text-align: right; }
+
+.total-row td {
+  border-top: 2px solid var(--border);
+  border-bottom: none;
+  padding-top: 13px;
+  font-size: 0.9rem;
+}
+
+/* Qty control */
+.qty-ctrl { display: flex; align-items: center; gap: 7px; }
+.qty-btn {
+  width: 28px;
+  height: 28px;
+  border: 1.5px solid var(--border);
+  border-radius: 5px;
+  background: var(--bg-card);
+  color: var(--text);
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+  font-family: var(--font);
+  transition: all var(--ease);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.qty-btn:hover { border-color: var(--brand); color: var(--brand); }
+.qty-num { min-width: 20px; text-align: center; font-weight: 600; font-size: 0.9rem; }
+.remove-btn {
+  background: none;
+  border: none;
+  color: var(--text-3);
+  cursor: pointer;
+  font-size: 1.05rem;
+  padding: 4px 6px;
+  border-radius: 4px;
+  transition: all var(--ease);
+  font-family: var(--font);
+  line-height: 1;
+}
+.remove-btn:hover { color: var(--red); background: var(--red-bg); }
+
+/* ── Empty state ── */
+.empty-state { text-align: center; padding: 52px 24px; color: var(--text-3); }
+.empty-icon  { font-size: 2.8rem; display: block; margin-bottom: 12px; }
+
+/* ── Results (Step 4) ── */
+.results-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 22px;
+}
+.stat-card {
+  background: var(--bg);
+  border: 1.5px solid var(--border);
+  border-radius: var(--r-md);
+  padding: 20px 22px;
+  text-align: center;
+}
+.stat-card-peak { background: var(--amber-bg); border-color: #FCD34D; }
+.stat-value {
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--navy);
+  line-height: 1.1;
+  margin-bottom: 5px;
+}
+.stat-card-peak .stat-value { color: var(--amber); }
+.stat-label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+  color: var(--text-3);
+}
+
+/* Recommendation card */
+.rec-card {
+  border-radius: var(--r-md);
+  padding: 22px 26px;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  border: 1.5px solid transparent;
+}
+.rec-card.green { background: var(--green-bg); border-color: #86EFAC; }
+.rec-card.amber { background: var(--amber-bg); border-color: #FCD34D; }
+.rec-card.red   { background: var(--red-bg);   border-color: #FCA5A5; }
+
+.rec-emoji { font-size: 2.2rem; flex-shrink: 0; }
+.rec-body h3 { font-size: 1.05rem; font-weight: 700; margin-bottom: 4px; }
+.rec-size {
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: var(--brand);
+  display: block;
+  margin: 4px 0 6px;
+  line-height: 1;
+}
+.rec-body p { font-size: 0.875rem; color: var(--text-2); line-height: 1.5; }
+
+/* Generator type block */
+.generator-type-block {
+  border: 1.5px solid var(--border);
+  border-radius: var(--r-md);
+  padding: 16px 20px;
+  margin-bottom: 20px;
+  font-size: 0.875rem;
+  color: var(--text-2);
+  line-height: 1.5;
+}
+.generator-type-block strong {
+  display: block;
+  font-size: 0.83rem;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+  color: var(--text-3);
+  margin-bottom: 6px;
+}
+
+/* Tips */
+.tips-block { margin-bottom: 24px; }
+.tips-block h3 {
+  font-size: 0.83rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+  color: var(--text-3);
+  margin-bottom: 10px;
+}
+.tips-list { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+.tips-list li {
+  padding-left: 20px;
+  position: relative;
+  font-size: 0.875rem;
+  color: var(--text-2);
+  line-height: 1.5;
+}
+.tips-list li::before {
+  content: '→';
+  position: absolute;
+  left: 0;
+  color: var(--brand);
+  font-weight: 700;
+}
+
+/* CTA block */
+.cta-block {
+  text-align: center;
+  padding: 24px;
+  background: var(--bg);
+  border-radius: var(--r-md);
+  border: 1.5px dashed var(--border);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+.cta-block p { font-size: 0.9rem; color: var(--text-2); }
+.btn-cta     { display: inline-block; text-decoration: none; font-size: 1rem; padding: 13px 30px; }
+.btn-restart { font-size: 0.82rem; padding: 7px 16px; }
+
+/* ── Buttons ── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 22px;
+  border-radius: var(--r-sm);
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition: all var(--ease);
+  font-family: var(--font);
+  text-decoration: none;
+}
+.btn-primary { background: var(--brand); color: #fff; }
+.btn-primary:hover {
+  background: var(--brand-dark);
+  box-shadow: 0 4px 12px rgba(245,130,10,.35);
+  transform: translateY(-1px);
+}
+.btn-secondary { background: var(--bg); color: var(--text); border: 1.5px solid var(--border); }
+.btn-secondary:hover { border-color: var(--brand); color: var(--brand); }
+.btn-ghost { background: transparent; color: var(--text-2); border: 1.5px solid var(--border); }
+.btn-ghost:hover { border-color: var(--brand); color: var(--brand); }
+
+/* ── Nav bar ── */
+.calc-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 44px;
+  border-top: 1px solid var(--border);
+  background: var(--bg-card);
+}
+
+/* ── Responsive ── */
+@media (max-width: 660px) {
+  body { padding: 0; }
+  .calc-wrapper { border-radius: 0; }
+  .calc-header { padding: 28px 20px 22px; }
+  .calc-header h1 { font-size: 1.45rem; }
+  .step { padding: 24px 20px 16px; }
+  .step-labels { padding: 8px 16px 0; }
+  .coverage-cards { grid-template-columns: 1fr; }
+  .fuel-cards { grid-template-columns: repeat(2, 1fr); }
+  .appliance-panel { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); }
+  .results-grid { grid-template-columns: 1fr; }
+  .rec-card { flex-direction: column; text-align: center; }
+  .calc-nav { padding: 16px 20px; }
+  .custom-watts-row { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 420px) {
+  .tab-bar { gap: 6px; }
+  .tab-btn { padding: 6px 11px; font-size: 0.78rem; }
+  .fuel-cards { grid-template-columns: 1fr 1fr; }
+}
+  </style>
+</head>
+<body>
+  <div class="calc-wrapper" id="generator-calculator" data-cta-url="#">
+
+    <!-- Header -->
+    <div class="calc-header">
+      <div class="calc-header-icon">⚡</div>
+      <h1>Generator Power Calculator</h1>
+      <p>Answer a few quick questions and we'll recommend the right generator size for your home.</p>
+    </div>
+
+    <!-- Progress bar -->
+    <div class="progress-bar" aria-hidden="true">
+      <div class="progress-fill" id="progress-fill"></div>
+    </div>
+
+    <!-- Step labels -->
+    <div class="step-labels" aria-hidden="true">
+      <span class="step-label" data-step="0">Coverage</span>
+      <span class="step-label" data-step="1">Heating</span>
+      <span class="step-label" data-step="2">Appliances</span>
+      <span class="step-label" data-step="3">Review</span>
+      <span class="step-label" data-step="4">Results</span>
+    </div>
+
+    <!-- ── STEP 0: Coverage Level ── -->
+    <section class="step" id="step-0" data-step="0">
+      <div class="step-intro">
+        <h2>What level of backup power do you need?</h2>
+        <p>This helps us pre-select sensible defaults. You can adjust everything in the next steps.</p>
+      </div>
+      <div class="coverage-cards" id="coverage-cards">
+        <button class="coverage-card" data-coverage="essential" aria-pressed="false">
+          <span class="coverage-icon">🔌</span>
+          <div class="coverage-info">
+            <strong>Essential Only</strong>
+            <span class="coverage-sub">Keep critical systems running during an outage — lights, refrigerator, heating, sump pump, and any medical equipment.</span>
+            <span class="coverage-range">Typically 7,500 – 18,000W</span>
+          </div>
+        </button>
+        <button class="coverage-card" data-coverage="whole" aria-pressed="false">
+          <span class="coverage-icon">🏠</span>
+          <div class="coverage-info">
+            <strong>Whole House</strong>
+            <span class="coverage-sub">Power virtually everything — including air conditioning, laundry, electric range, and all of the above.</span>
+            <span class="coverage-range">Typically 20,000 – 36,000W+</span>
+          </div>
+        </button>
+      </div>
+    </section>
+
+    <!-- ── STEP 1: Heating Fuel Type ── -->
+    <section class="step" id="step-1" data-step="1">
+      <div class="step-intro">
+        <h2>How do you heat your home?</h2>
+        <p>Heating is often the biggest factor in generator sizing. This auto-selects the right appliance for you.</p>
+      </div>
+      <div class="fuel-cards" id="fuel-cards">
+        <button class="fuel-card" data-fuel="gas" aria-pressed="false">
+          <span class="fuel-icon">🔥</span>
+          <span class="fuel-label">Natural Gas</span>
+          <span class="fuel-note">~800W blower</span>
+        </button>
+        <button class="fuel-card" data-fuel="propane" aria-pressed="false">
+          <span class="fuel-icon">🛢️</span>
+          <span class="fuel-label">Propane</span>
+          <span class="fuel-note">~800W blower</span>
+        </button>
+        <button class="fuel-card" data-fuel="oil" aria-pressed="false">
+          <span class="fuel-icon">🪣</span>
+          <span class="fuel-label">Heating Oil / Boiler</span>
+          <span class="fuel-note">~800W blower</span>
+        </button>
+        <button class="fuel-card" data-fuel="electric" aria-pressed="false">
+          <span class="fuel-icon">⚡</span>
+          <span class="fuel-label">Electric Baseboard</span>
+          <span class="fuel-note">~5,000W</span>
+        </button>
+        <button class="fuel-card" data-fuel="heatpump" aria-pressed="false">
+          <span class="fuel-icon">🌡️</span>
+          <span class="fuel-label">Heat Pump</span>
+          <span class="fuel-note">2,000 – 5,000W</span>
+        </button>
+        <button class="fuel-card" data-fuel="none" aria-pressed="false">
+          <span class="fuel-icon">🏢</span>
+          <span class="fuel-label">Space Heaters / Other</span>
+          <span class="fuel-note">~1,500W each</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- ── STEP 2: Appliance Selection ── -->
+    <section class="step" id="step-2" data-step="2">
+      <div class="step-intro">
+        <h2>Select your appliances</h2>
+        <p>Check everything you want to run during a power outage. Adjust quantities in the next step.</p>
+      </div>
+
+      <div class="tab-bar" role="tablist" aria-label="Appliance categories">
+        <button class="tab-btn active" role="tab" aria-selected="true"  data-tab="essential">Essential</button>
+        <button class="tab-btn" role="tab" aria-selected="false" data-tab="kitchen">Kitchen</button>
+        <button class="tab-btn" role="tab" aria-selected="false" data-tab="hvac">HVAC &amp; Heat</button>
+        <button class="tab-btn" role="tab" aria-selected="false" data-tab="laundry">Laundry</button>
+        <button class="tab-btn" role="tab" aria-selected="false" data-tab="entertainment">Entertainment</button>
+        <button class="tab-btn" role="tab" aria-selected="false" data-tab="medical">Medical</button>
+        <button class="tab-btn" role="tab" aria-selected="false" data-tab="outdoor">Outdoor</button>
+        <button class="tab-btn" role="tab" aria-selected="false" data-tab="custom">+ Custom</button>
+      </div>
+
+      <div class="appliance-panel" id="appliance-panel"></div>
+
+      <!-- Custom appliance form -->
+      <div class="custom-form" id="custom-form" style="display:none">
+        <h3>Add a custom appliance</h3>
+        <div class="custom-fields">
+          <input type="text" id="custom-name" placeholder="Appliance name" maxlength="50" />
+          <div class="custom-watts-row">
+            <label>
+              Running watts
+              <input type="number" id="custom-running" placeholder="e.g. 1200" min="1" max="50000" />
+            </label>
+            <label>
+              Surge watts <span class="optional">(optional)</span>
+              <input type="number" id="custom-surge" placeholder="e.g. 3600" min="1" max="100000" />
+            </label>
+          </div>
+          <button class="btn btn-secondary" id="add-custom-btn">Add Appliance</button>
+        </div>
+      </div>
+
+      <!-- Running total badge -->
+      <div class="running-total-bar" id="running-total-bar">
+        <span class="rt-label">Selected load so far:</span>
+        <span class="rt-value" id="rt-running">0 W</span>
+        <span class="rt-sep">running</span>
+        <span class="rt-value rt-surge" id="rt-surge">0 W</span>
+        <span class="rt-sep">peak</span>
+      </div>
+    </section>
+
+    <!-- ── STEP 3: Review & Adjust ── -->
+    <section class="step" id="step-3" data-step="3">
+      <div class="step-intro">
+        <h2>Review &amp; adjust your list</h2>
+        <p>Update quantities or remove items. Totals update instantly.</p>
+      </div>
+
+      <div id="review-empty" class="empty-state" style="display:none">
+        <span class="empty-icon">🔌</span>
+        <p>No appliances selected yet. Go back and choose what you need to power.</p>
+      </div>
+
+      <div id="review-table-wrap" style="display:none">
+        <table class="review-table" aria-label="Selected appliances">
+          <thead>
+            <tr>
+              <th>Appliance</th>
+              <th class="col-qty">Qty</th>
+              <th class="col-watts">Running W</th>
+              <th class="col-watts">Surge W</th>
+              <th class="col-remove" aria-label="Remove"></th>
+            </tr>
+          </thead>
+          <tbody id="review-tbody"></tbody>
+          <tfoot>
+            <tr class="total-row">
+              <td colspan="2"><strong>Totals</strong></td>
+              <td><strong id="review-total-running">0 W</strong></td>
+              <td><strong id="review-total-surge">0 W</strong></td>
+              <td></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </section>
+
+    <!-- ── STEP 4: Results ── -->
+    <section class="step" id="step-4" data-step="4">
+      <div class="step-intro">
+        <h2>Your Generator Recommendation</h2>
+        <p>Based on your selections, here's what you need.</p>
+      </div>
+
+      <div class="results-grid">
+        <div class="stat-card">
+          <div class="stat-value" id="res-running">—</div>
+          <div class="stat-label">Running Watts</div>
+        </div>
+        <div class="stat-card stat-card-peak">
+          <div class="stat-value" id="res-peak">—</div>
+          <div class="stat-label">Peak / Surge Watts</div>
+        </div>
+      </div>
+
+      <div class="rec-card" id="rec-card"></div>
+      <div class="generator-type-block" id="generator-type-block"></div>
+      <div class="tips-block" id="tips-block"></div>
+
+      <div class="cta-block">
+        <p>Ready to find the right generator?</p>
+        <a class="btn btn-primary btn-cta" id="cta-btn" href="#">Browse Generators at Ontivity Power →</a>
+        <button class="btn btn-ghost btn-restart" id="btn-restart">Start Over</button>
+      </div>
+    </section>
+
+    <!-- Navigation -->
+    <div class="calc-nav">
+      <button class="btn btn-ghost" id="btn-back" style="visibility:hidden">← Back</button>
+      <button class="btn btn-primary" id="btn-next">Next →</button>
+    </div>
+
+  </div><!-- /.calc-wrapper -->
+
+  <script>
+'use strict';
+
+const APPLIANCES = [
+  // Essential
+  { id: 'lights',         name: 'Lights (10 LED bulbs)',        icon: '💡', running: 100,  surge: 100,  tab: 'essential' },
+  { id: 'fridge',         name: 'Refrigerator / Freezer',       icon: '🧊', running: 700,  surge: 2200, tab: 'essential' },
+  { id: 'sump',           name: 'Sump Pump (1/3 HP)',           icon: '🪣', running: 800,  surge: 2900, tab: 'essential' },
+  { id: 'well_third',     name: 'Well Pump (1/3 HP)',           icon: '💧', running: 1000, surge: 3100, tab: 'essential' },
+  { id: 'well_half',      name: 'Well Pump (1/2 HP)',           icon: '💧', running: 1050, surge: 3200, tab: 'essential' },
+  { id: 'garage_door',    name: 'Garage Door Opener',           icon: '🚗', running: 550,  surge: 1000, tab: 'essential' },
+  { id: 'phone_charging', name: 'Phone / Device Charging',      icon: '🔋', running: 150,  surge: 150,  tab: 'essential' },
+  // Kitchen
+  { id: 'microwave',    name: 'Microwave Oven',           icon: '📡', running: 1000, surge: 1000, tab: 'kitchen' },
+  { id: 'elec_range',   name: 'Electric Range / Oven',    icon: '🍳', running: 4000, surge: 4000, tab: 'kitchen' },
+  { id: 'dishwasher',   name: 'Dishwasher',               icon: '🍽️', running: 1800, surge: 1800, tab: 'kitchen' },
+  { id: 'coffee',       name: 'Coffee Maker',             icon: '☕', running: 1000, surge: 1000, tab: 'kitchen' },
+  { id: 'toaster',      name: 'Toaster',                  icon: '🍞', running: 850,  surge: 850,  tab: 'kitchen' },
+  { id: 'blender',      name: 'Blender',                  icon: '🥤', running: 400,  surge: 400,  tab: 'kitchen' },
+  { id: 'kettle',       name: 'Electric Kettle',          icon: '🫖', running: 1500, surge: 1500, tab: 'kitchen' },
+  // HVAC
+  { id: 'ac_1ton',      name: 'Central AC — 1 ton (12k BTU)', icon: '❄️', running: 1500, surge: 4500,  tab: 'hvac' },
+  { id: 'ac_2ton',      name: 'Central AC — 2 ton (24k BTU)', icon: '❄️', running: 2800, surge: 8400,  tab: 'hvac' },
+  { id: 'ac_3ton',      name: 'Central AC — 3 ton (36k BTU)', icon: '❄️', running: 3800, surge: 11400, tab: 'hvac' },
+  { id: 'window_ac',    name: 'Window AC (10,000 BTU)',        icon: '🌬️', running: 1200, surge: 3600,  tab: 'hvac' },
+  { id: 'gas_furnace',  name: 'Gas Furnace (1/2 HP blower)',   icon: '🔥', running: 800,  surge: 2350,  tab: 'hvac', fuelTag: ['gas','propane','oil'] },
+  { id: 'elec_furnace', name: 'Electric Furnace (5kW)',        icon: '⚡', running: 5000, surge: 5000,  tab: 'hvac', fuelTag: ['electric'] },
+  { id: 'heatpump_sm',  name: 'Heat Pump — Small System',      icon: '🌡️', running: 2000, surge: 6000,  tab: 'hvac', fuelTag: ['heatpump'] },
+  { id: 'heatpump_lg',  name: 'Heat Pump — Large System',      icon: '🌡️', running: 5000, surge: 15000, tab: 'hvac' },
+  { id: 'space_heater', name: 'Space Heater (Portable)',        icon: '🔆', running: 1500, surge: 1500,  tab: 'hvac', fuelTag: ['none'] },
+  { id: 'ceiling_fan',  name: 'Ceiling Fan',                   icon: '🌀', running: 75,   surge: 75,    tab: 'hvac' },
+  { id: 'attic_fan',    name: 'Attic / Bath Fan',              icon: '💨', running: 150,  surge: 150,   tab: 'hvac' },
+  // Laundry
+  { id: 'washer',       name: 'Washing Machine',        icon: '🫧', running: 1150, surge: 2250, tab: 'laundry' },
+  { id: 'elec_dryer',   name: 'Electric Clothes Dryer', icon: '♨️', running: 5400, surge: 6750, tab: 'laundry' },
+  { id: 'gas_dryer',    name: 'Gas Clothes Dryer',      icon: '🌬️', running: 700,  surge: 1800, tab: 'laundry' },
+  // Entertainment
+  { id: 'tv',           name: 'TV — 55 inch',            icon: '📺', running: 130,  surge: 130,  tab: 'entertainment' },
+  { id: 'desktop',      name: 'Desktop Computer',        icon: '🖥️', running: 500,  surge: 500,  tab: 'entertainment' },
+  { id: 'laptop',       name: 'Laptop',                  icon: '💻', running: 100,  surge: 100,  tab: 'entertainment' },
+  { id: 'console',      name: 'Gaming Console',          icon: '🎮', running: 200,  surge: 200,  tab: 'entertainment' },
+  { id: 'home_theater', name: 'Home Theater / Soundbar', icon: '🔊', running: 300,  surge: 300,  tab: 'entertainment' },
+  // Medical
+  { id: 'cpap',         name: 'CPAP (no humidifier)',  icon: '😴', running: 50,  surge: 50,  tab: 'medical' },
+  { id: 'cpap_humid',   name: 'CPAP (with humidifier)',icon: '💨', running: 100, surge: 100, tab: 'medical' },
+  { id: 'oxygen',       name: 'Oxygen Concentrator',   icon: '🫁', running: 300, surge: 300, tab: 'medical' },
+  { id: 'nebulizer',    name: 'Nebulizer',             icon: '💊', running: 100, surge: 100, tab: 'medical' },
+  // Outdoor
+  { id: 'pool_pump',     name: 'Pool Pump (1.5 HP)',          icon: '🏊', running: 2200, surge: 6600, tab: 'outdoor' },
+  { id: 'ev_charger',    name: 'EV Charger — Level 2 (30A)',  icon: '🚗', running: 7200, surge: 7200, tab: 'outdoor' },
+  { id: 'air_comp',      name: 'Air Compressor (1 HP)',        icon: '🔧', running: 1000, surge: 3000, tab: 'outdoor' },
+  { id: 'table_saw',     name: 'Table Saw (10 in)',            icon: '🪚', running: 1800, surge: 4500, tab: 'outdoor' },
+  { id: 'pressure_wash', name: 'Pressure Washer',              icon: '🚿', running: 1200, surge: 1200, tab: 'outdoor' },
+];
+
+const DEFAULTS = {
+  essential: ['lights', 'fridge', 'sump', 'phone_charging'],
+  whole:     ['lights', 'fridge', 'sump', 'phone_charging', 'washer', 'ac_2ton', 'tv'],
+};
+
+const FUEL_APPLIANCE = {
+  gas:      'gas_furnace',
+  propane:  'gas_furnace',
+  oil:      'gas_furnace',
+  electric: 'elec_furnace',
+  heatpump: 'heatpump_sm',
+  none:     'space_heater',
+};
+
+const state = {
+  step:      0,
+  coverage:  null,
+  fuel:      null,
+  selected:  {},
+  custom:    [],
+  activeTab: 'essential',
+};
+
+let customCounter = 0;
+
+function fmt(watts) {
+  if (watts >= 1000) return (watts / 1000).toFixed(watts % 1000 === 0 ? 0 : 1) + ' kW';
+  return watts.toLocaleString() + ' W';
+}
+
+function roundUp500(n) {
+  return Math.ceil(n / 500) * 500;
+}
+
+function getAllAppliances() {
+  return [...APPLIANCES, ...state.custom];
+}
+
+function calcTotals() {
+  const all = getAllAppliances();
+  let running = 0;
+  let highestSurge = 0;
+
+  Object.entries(state.selected).forEach(([id, { qty }]) => {
+    const a = all.find(x => x.id === id);
+    if (!a) return;
+    running += a.running * qty;
+    const s = (a.surge || a.running) * qty;
+    if (s > highestSurge) highestSurge = s;
+  });
+
+  const peak        = running + highestSurge;
+  const recommended = roundUp500(peak * 1.25);
+  const rangeMin    = roundUp500(recommended * 0.88);
+  const rangeMax    = recommended;
+
+  return { running, peak, recommended, rangeMin, rangeMax };
+}
+
+function scrollToTop() {
+  const wrapper = document.getElementById('generator-calculator');
+  if (wrapper) wrapper.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function updateProgressBar() {
+  document.getElementById('progress-fill').style.width = ((state.step / 4) * 100) + '%';
+  document.querySelectorAll('.step-label').forEach(el => {
+    const s = parseInt(el.dataset.step);
+    el.classList.toggle('active', s === state.step);
+    el.classList.toggle('done',   s < state.step);
+  });
+}
+
+function showStep(n) {
+  document.querySelectorAll('.step').forEach(el => {
+    el.classList.toggle('active', parseInt(el.dataset.step) === n);
+  });
+
+  const back = document.getElementById('btn-back');
+  const next = document.getElementById('btn-next');
+
+  back.style.visibility = n === 0 ? 'hidden' : 'visible';
+
+  if (n === 4) {
+    next.style.display = 'none';
+  } else {
+    next.style.display = '';
+    next.textContent = n === 3 ? 'Calculate →' : 'Next →';
+  }
+}
+
+/* ── Step 0 ── */
+function initStep0() {
+  document.querySelectorAll('.coverage-card').forEach(btn => {
+    btn.addEventListener('click', () => {
+      state.coverage = btn.dataset.coverage;
+      document.querySelectorAll('.coverage-card').forEach(b => b.setAttribute('aria-pressed', 'false'));
+      btn.setAttribute('aria-pressed', 'true');
+    });
+  });
+}
+
+/* ── Step 1 ── */
+function initStep1() {
+  document.querySelectorAll('.fuel-card').forEach(btn => {
+    btn.addEventListener('click', () => {
+      state.fuel = btn.dataset.fuel;
+      document.querySelectorAll('.fuel-card').forEach(b => b.setAttribute('aria-pressed', 'false'));
+      btn.setAttribute('aria-pressed', 'true');
+    });
+  });
+}
+
+/* ── Step 2 ── */
+function applyDefaults() {
+  const defaults = DEFAULTS[state.coverage] || DEFAULTS.essential;
+  defaults.forEach(id => {
+    if (!state.selected[id]) state.selected[id] = { qty: 1 };
+  });
+
+  if (state.fuel) {
+    const fuelId = FUEL_APPLIANCE[state.fuel];
+    if (fuelId && !state.selected[fuelId]) {
+      state.selected[fuelId] = { qty: 1 };
+    }
+  }
+}
+
+function renderAppliancePanel() {
+  const panel      = document.getElementById('appliance-panel');
+  const customForm = document.getElementById('custom-form');
+  const tab        = state.activeTab;
+
+  if (tab === 'custom') {
+    panel.innerHTML = '';
+    customForm.style.display = '';
+    if (state.custom.length > 0) {
+      panel.style.display = 'grid';
+      state.custom.forEach(a => panel.appendChild(buildAppCard(a)));
+    } else {
+      panel.style.display = 'none';
+    }
+    return;
+  }
+
+  customForm.style.display = 'none';
+  panel.style.display = 'grid';
+  const apps = getAllAppliances().filter(a => a.tab === tab);
+  panel.innerHTML = '';
+  apps.forEach(a => panel.appendChild(buildAppCard(a)));
+}
+
+function buildAppCard(a) {
+  const isSelected = !!state.selected[a.id];
+  const div = document.createElement('div');
+  div.className = 'app-card' + (isSelected ? ' selected' : '');
+  div.dataset.id = a.id;
+  div.setAttribute('role', 'checkbox');
+  div.setAttribute('aria-checked', String(isSelected));
+  div.setAttribute('tabindex', '0');
+
+  const surgeText = a.surge && a.surge !== a.running
+    ? `<span>${a.surge.toLocaleString()} W surge</span>`
+    : '';
+
+  div.innerHTML = `
+    <span class="app-check" aria-hidden="true"></span>
+    <span class="app-icon" aria-hidden="true">${a.icon}</span>
+    <span class="app-info">
+      <span class="app-name">${a.name}</span>
+      <span class="app-watts">
+        <span>${a.running.toLocaleString()} W running</span>
+        ${surgeText}
+      </span>
+    </span>
+  `;
+
+  function toggle() {
+    if (state.selected[a.id]) {
+      delete state.selected[a.id];
+    } else {
+      state.selected[a.id] = { qty: 1 };
+    }
+    renderAppliancePanel();
+    updateRunningTotal();
+  }
+
+  div.addEventListener('click', toggle);
+  div.addEventListener('keydown', e => {
+    if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); toggle(); }
+  });
+
+  return div;
+}
+
+function updateRunningTotal() {
+  const { running, peak } = calcTotals();
+  document.getElementById('rt-running').textContent = fmt(running);
+  document.getElementById('rt-surge').textContent   = fmt(peak);
+}
+
+function initStep2() {
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      state.activeTab = btn.dataset.tab;
+      document.querySelectorAll('.tab-btn').forEach(b => {
+        b.classList.toggle('active', b === btn);
+        b.setAttribute('aria-selected', String(b === btn));
+      });
+      renderAppliancePanel();
+    });
+  });
+
+  document.getElementById('add-custom-btn').addEventListener('click', () => {
+    const name    = document.getElementById('custom-name').value.trim();
+    const running = parseInt(document.getElementById('custom-running').value);
+    const surge   = parseInt(document.getElementById('custom-surge').value) || running;
+
+    if (!name || !running || running < 1) {
+      alert('Please enter an appliance name and running watts.');
+      return;
+    }
+
+    const id = 'custom_' + (++customCounter);
+    state.custom.push({ id, name, icon: '🔌', running, surge, tab: 'custom' });
+    state.selected[id] = { qty: 1 };
+
+    document.getElementById('custom-name').value    = '';
+    document.getElementById('custom-running').value = '';
+    document.getElementById('custom-surge').value   = '';
+
+    renderAppliancePanel();
+    updateRunningTotal();
+  });
+}
+
+/* ── Step 3 ── */
+function renderReview() {
+  const tbody = document.getElementById('review-tbody');
+  const empty = document.getElementById('review-empty');
+  const wrap  = document.getElementById('review-table-wrap');
+  const all   = getAllAppliances();
+  const ids   = Object.keys(state.selected);
+
+  if (ids.length === 0) {
+    empty.style.display = '';
+    wrap.style.display  = 'none';
+    return;
+  }
+
+  empty.style.display = 'none';
+  wrap.style.display  = '';
+  tbody.innerHTML = '';
+
+  ids.forEach(id => {
+    const a = all.find(x => x.id === id);
+    if (!a) return;
+    const qty = state.selected[id].qty;
+
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><span aria-hidden="true">${a.icon}</span> ${a.name}</td>
+      <td>
+        <div class="qty-ctrl">
+          <button class="qty-btn" data-action="dec" data-id="${id}" aria-label="Decrease quantity">−</button>
+          <span class="qty-num" id="qty-${id}">${qty}</span>
+          <button class="qty-btn" data-action="inc" data-id="${id}" aria-label="Increase quantity">+</button>
+        </div>
+      </td>
+      <td>${(a.running * qty).toLocaleString()} W</td>
+      <td>${((a.surge || a.running) * qty).toLocaleString()} W</td>
+      <td><button class="remove-btn" data-id="${id}" aria-label="Remove ${a.name}">✕</button></td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  updateReviewTotals();
+  tbody.addEventListener('click', handleReviewClick);
+}
+
+function handleReviewClick(e) {
+  const btn = e.target.closest('button');
+  if (!btn) return;
+  const id = btn.dataset.id;
+  if (!id) return;
+
+  if (btn.classList.contains('remove-btn')) {
+    delete state.selected[id];
+    state.custom = state.custom.filter(c => c.id !== id);
+    renderReview();
+    return;
+  }
+
+  if (btn.dataset.action === 'inc') {
+    state.selected[id].qty = Math.min(9, state.selected[id].qty + 1);
+  } else if (btn.dataset.action === 'dec') {
+    if (state.selected[id].qty > 1) {
+      state.selected[id].qty -= 1;
+    } else {
+      delete state.selected[id];
+      renderReview();
+      return;
+    }
+  }
+
+  const a = getAllAppliances().find(x => x.id === id);
+  if (!a) return;
+  const qty = state.selected[id].qty;
+  const row = btn.closest('tr');
+  row.querySelector('.qty-num').textContent = qty;
+  const cells = row.querySelectorAll('td');
+  cells[2].textContent = (a.running * qty).toLocaleString() + ' W';
+  cells[3].textContent = ((a.surge || a.running) * qty).toLocaleString() + ' W';
+  updateReviewTotals();
+}
+
+function updateReviewTotals() {
+  const { running, peak } = calcTotals();
+  document.getElementById('review-total-running').textContent = fmt(running);
+  document.getElementById('review-total-surge').textContent   = fmt(peak);
+}
+
+/* ── Step 4 ── */
+function renderResults() {
+  const { running, peak, rangeMin, rangeMax } = calcTotals();
+
+  document.getElementById('res-running').textContent = fmt(running);
+  document.getElementById('res-peak').textContent    = fmt(peak);
+
+  const recCard = document.getElementById('rec-card');
+  let color, emoji, headline, desc;
+
+  if (rangeMax <= 7500) {
+    color = 'green'; emoji = '✅';
+    headline = 'Portable Generator';
+    desc = `A quality portable generator in the <strong>${fmt(rangeMin)} – ${fmt(rangeMax)}</strong> range will handle your load. Look for one rated at <strong>${fmt(rangeMax)}</strong> or higher.`;
+  } else if (rangeMax <= 12000) {
+    color = 'amber'; emoji = '⚡';
+    headline = 'Heavy-Duty Portable or Entry-Level Standby';
+    desc = `Your load calls for a generator in the <strong>${fmt(rangeMin)} – ${fmt(rangeMax)}</strong> range. A heavy-duty portable works; a standby unit offers convenience and automatic transfer.`;
+  } else {
+    color = 'red'; emoji = '🏠';
+    headline = 'Standby Generator Recommended';
+    desc = `At <strong>${fmt(rangeMin)} – ${fmt(rangeMax)}</strong>, a whole-home standby generator is the right choice. A licensed electrician will install it with an automatic transfer switch.`;
+  }
+
+  recCard.className = `rec-card ${color}`;
+  recCard.innerHTML = `
+    <span class="rec-emoji">${emoji}</span>
+    <div class="rec-body">
+      <h3>${headline}</h3>
+      <span class="rec-size">${fmt(rangeMin)} – ${fmt(rangeMax)}</span>
+      <p>${desc}</p>
+    </div>
+  `;
+
+  document.getElementById('generator-type-block').innerHTML = `
+    <strong>Portable vs. Standby — at a glance</strong>
+    <table style="width:100%;border-collapse:collapse;font-size:.83rem;margin-top:6px">
+      <thead><tr>
+        <th style="text-align:left;padding:6px 8px;border-bottom:1px solid var(--border);color:var(--text-3)">Type</th>
+        <th style="text-align:left;padding:6px 8px;border-bottom:1px solid var(--border);color:var(--text-3)">Best for</th>
+        <th style="text-align:left;padding:6px 8px;border-bottom:1px solid var(--border);color:var(--text-3)">Typical size</th>
+      </tr></thead>
+      <tbody>
+        <tr>
+          <td style="padding:7px 8px;border-bottom:1px solid var(--border)">Portable</td>
+          <td style="padding:7px 8px;border-bottom:1px solid var(--border)">Occasional outages, camping, job sites</td>
+          <td style="padding:7px 8px;border-bottom:1px solid var(--border)">2,000 – 12,000W</td>
+        </tr>
+        <tr>
+          <td style="padding:7px 8px">Standby</td>
+          <td style="padding:7px 8px">Whole-house, automatic power, frequent outages</td>
+          <td style="padding:7px 8px">10,000 – 36,000W+</td>
+        </tr>
+      </tbody>
+    </table>
+  `;
+
+  const tips = [
+    `Your calculation includes a <strong>25% safety buffer</strong> — the industry-standard margin recommended by Generac, Kohler, and the NEC.`,
+    `Always start motor-driven appliances (AC, pumps) one at a time to avoid overloading the generator during surge.`,
+  ];
+
+  const ids = Object.keys(state.selected);
+  if (ids.includes('elec_dryer'))   tips.push('Switching to a <strong>gas clothes dryer</strong> (~700W) instead of electric (~5,400W) can reduce your required generator size significantly.');
+  if (ids.includes('elec_range'))   tips.push('An <strong>electric range uses 4,000W</strong>. A gas range or camping stove during outages can reduce your generator size by one full tier.');
+  if (ids.includes('ev_charger'))   tips.push('Your EV Level 2 charger draws <strong>7,200W</strong> — consider skipping EV charging during an outage or switching to a slower Level 1 charge.');
+  if (ids.includes('elec_furnace')) tips.push('Electric resistance heating is the highest-draw home system (~5,000W). A gas or propane furnace with a blower (~800W) would drastically reduce generator requirements.');
+  if (ids.some(id => id.startsWith('heatpump'))) tips.push('Heat pumps have high startup surge watts. Make sure your generator\'s <em>peak/surge</em> rating — not just running watts — meets or exceeds your peak load.');
+  if (rangeMax > 20000) tips.push('For loads above 20kW, consult a licensed electrician. Generator installation requires a proper transfer switch to meet NEC Article 702 and local codes.');
+
+  document.getElementById('tips-block').innerHTML = `
+    <h3>Sizing tips</h3>
+    <ul class="tips-list">
+      ${tips.slice(0, 5).map(t => `<li>${t}</li>`).join('')}
+    </ul>
+  `;
+
+  const wrapper = document.getElementById('generator-calculator');
+  document.getElementById('cta-btn').href = wrapper.dataset.ctaUrl || '#';
+}
+
+/* ── Navigation ── */
+function canAdvance() {
+  if (state.step === 0 && !state.coverage) {
+    alert('Please select a coverage level to continue.');
+    return false;
+  }
+  if (state.step === 1 && !state.fuel) {
+    alert('Please select your primary heating fuel type to continue.');
+    return false;
+  }
+  return true;
+}
+
+function goNext() {
+  if (!canAdvance()) return;
+
+  if (state.step === 1) {
+    applyDefaults();
+    renderAppliancePanel();
+    updateRunningTotal();
+  }
+  if (state.step === 2) renderReview();
+  if (state.step === 3) renderResults();
+
+  state.step++;
+  showStep(state.step);
+  updateProgressBar();
+  scrollToTop();
+}
+
+function goBack() {
+  if (state.step === 0) return;
+  state.step--;
+  showStep(state.step);
+  updateProgressBar();
+  scrollToTop();
+}
+
+function restart() {
+  state.step      = 0;
+  state.coverage  = null;
+  state.fuel      = null;
+  state.selected  = {};
+  state.custom    = [];
+  state.activeTab = 'essential';
+
+  document.querySelectorAll('.coverage-card').forEach(b => b.setAttribute('aria-pressed', 'false'));
+  document.querySelectorAll('.fuel-card').forEach(b => b.setAttribute('aria-pressed', 'false'));
+  document.querySelectorAll('.tab-btn').forEach((b, i) => {
+    b.classList.toggle('active', i === 0);
+    b.setAttribute('aria-selected', String(i === 0));
+  });
+
+  showStep(0);
+  updateProgressBar();
+  scrollToTop();
+}
+
+/* ── Init ── */
+document.addEventListener('DOMContentLoaded', () => {
+  initStep0();
+  initStep1();
+  initStep2();
+
+  document.getElementById('btn-next').addEventListener('click', goNext);
+  document.getElementById('btn-back').addEventListener('click', goBack);
+  document.getElementById('btn-restart').addEventListener('click', restart);
+
+  showStep(0);
+  updateProgressBar();
+});
+  </script>
+</body>
+</html>
